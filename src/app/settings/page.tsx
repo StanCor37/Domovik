@@ -44,6 +44,11 @@ const sections = [
     title: "Payment Methods",
     description: "The methods offered when logging a payment.",
   },
+  {
+    href: "/settings/users",
+    title: "Users",
+    description: "Staff accounts that can log in.",
+  },
 ];
 
 export default function SettingsPage() {

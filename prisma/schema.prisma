@@ -8,6 +8,18 @@ datasource db {
   directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
+// Staff accounts. Single role for all users — no permission tiers.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
 // Single-property MVP: exactly one Property row is expected to exist.
 model Property {
   id          String   @id @default(cuid())
