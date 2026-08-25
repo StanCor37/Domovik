@@ -8,7 +8,7 @@ import { OCCUPYING_STATUSES, STATUS_LABELS, type ReservationStatus } from "@/lib
 
 // Next.js doesn't apply the root layout's title template to a page at the
 // same "/" segment (only to nested routes), so this needs the full string.
-export const metadata: Metadata = { title: "Dashboard · Hotel SaaS" };
+export const metadata: Metadata = { title: "Dashboard · Domovik" };
 
 const PROPERTY_ID = "singleton-property";
 

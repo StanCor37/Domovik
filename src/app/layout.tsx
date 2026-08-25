@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Hotel SaaS", template: "%s · Hotel SaaS" },
+  title: { default: "Domovik", template: "%s · Domovik" },
   description: "Hotel occupancy & reservation management",
 };
 
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="border-b border-zinc-200 bg-white">
           <nav className="mx-auto flex max-w-5xl items-center gap-6 px-6 py-4">
             <Link href="/" className="font-semibold tracking-tight">
-              Hotel SaaS
+              Domovik
             </Link>
             <NavLinks />
             <UserMenu />
