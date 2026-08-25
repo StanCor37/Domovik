@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+/*
+ * This app is a single hardcoded light theme (no dark: variants anywhere),
+ * so intentionally not wired to prefers-color-scheme. Body colors come from
+ * the Tailwind classes on <body> in layout.tsx.
+ */
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  /* Monochrome + neon: the one accent color, used sparingly (active nav,
+     today marker, focus states, small active badges) — never large surfaces. */
+  --color-accent: #c6ff00;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer components {
+  .input {
+    @apply rounded-md border border-zinc-400 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/40;
+  }
+  .btn-primary {
+    @apply rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700;
+  }
+  .btn-secondary {
+    @apply rounded-md border border-zinc-400 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50;
+  }
+  .btn-danger {
+    @apply rounded-md border border-zinc-900 bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-900 hover:text-white;
+  }
+}

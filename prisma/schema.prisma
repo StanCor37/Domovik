@@ -1,0 +1,185 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Single-property MVP: exactly one Property row is expected to exist.
+model Property {
+  id          String   @id @default(cuid())
+  name        String
+  contactInfo String?
+  currency    String   @default("EUR")
+  timezone    String   @default("Europe/Belgrade")
+  // Season is recurring annually — stored as MM-DD, year-independent.
+  seasonStartMonthDay String @default("05-01")
+  seasonEndMonthDay   String @default("10-31")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("properties")
+}
+
+model Room {
+  id                      String    @id @default(cuid())
+  number                  String    @unique
+  floor                   String?
+  bedCount                Int       @default(2)
+  extraBedCapacity        Int       @default(0)
+  description             String?
+  active                  Boolean   @default(true)
+  availableForReservation Boolean   @default(true)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  reservations            Reservation[]
+  roomTypeId              String
+  roomType                RoomType  @relation(fields: [roomTypeId], references: [id])
+
+  @@map("rooms")
+}
+
+// Configurable room categories (e.g. Single, Double, Suite) — the Price List
+// is scoped per room type, since different room types can carry different
+// prices for the same date/product.
+model RoomType {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  sortOrder       Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rooms           Room[]
+  priceListEntries PriceListEntry[]
+
+  @@map("room_types")
+}
+
+// Configurable packages (e.g. FB, HB, NIGHT). code is the stable identifier
+// stored on Reservation.product / PriceListEntry.product (plain strings,
+// validated against this table in application code — consistent with how
+// status fields work elsewhere, since SQLite has no native enum support).
+model Package {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  label     String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("packages")
+}
+
+// status is one of PREBOOKED | BOOKED | CANCELED | PARTIALLY_CANCELED | COMPLETED.
+// product (package) is one of FB | HB | NIGHT.
+// (SQLite has no native enum support, so both are validated in application code).
+// checkOut night itself is not occupied (hotel-night logic).
+// Cancellation never deletes a reservation — only changes status; the
+// reservation number and ledger history persist.
+model Reservation {
+  id                String   @id @default(cuid())
+  reservationNumber String   @unique
+  roomId            String
+  room              Room     @relation(fields: [roomId], references: [id])
+  guestName         String
+  guestContact      String?
+  checkIn           DateTime
+  checkOut          DateTime
+  product           String   @default("FB")
+  guests            Guest[]
+  payments          Payment[]
+  // Pricing snapshot at time of save — the user can always manually override
+  // the final amount, so this is not purely re-derivable from guests/dates.
+  baseAmount        Float    @default(0)
+  discountPercent   Float    @default(0)
+  discountAmount    Float    @default(0)
+  finalAmount       Float    @default(0)
+  taxAmount         Float    @default(0)
+  status            String   @default("PREBOOKED")
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("reservations")
+}
+
+// Every payment is its own record (deposit / balance / tax all logged
+// individually) rather than a single "amount paid" field on the reservation.
+model Payment {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  amount        Float
+  method        String
+  date          DateTime
+  note          String?
+  createdAt     DateTime    @default(now())
+
+  @@map("payments")
+}
+
+// One row per guest on a reservation. priceCategory and taxCategory are
+// tracked independently per the confirmed product decision: price category
+// is "what the family requested" (ADULT/CHILD_70/CHILD_50/FREE), tax category
+// is age-based (ADULT/CHILD_7_14/OTHER_CHILD) — they don't map 1:1.
+model Guest {
+  id            String      @id @default(cuid())
+  reservationId String
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  priceCategory String
+  taxCategory   String
+
+  @@map("guests")
+}
+
+// Per-year counter backing the R-XXX/YY reservation number format.
+model ReservationSequence {
+  year       Int @id
+  lastNumber Int @default(0)
+
+  @@map("reservation_sequences")
+}
+
+// Recurring annual pattern (e.g. 9-night smena), not a rigid calendar container.
+model SmenaPeriod {
+  id        String   @id @default(cuid())
+  label     String
+  // Stored as MM-DD, year-independent, recurring every season.
+  startMonthDay String
+  endMonthDay   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("smena_periods")
+}
+
+// Single-row table for global configuration not tied to Property.
+model Settings {
+  id                String   @id @default("singleton")
+  smenaLengthNights Int      @default(9)
+  // Local tax per occupied night, per guest, by tax category.
+  taxRateAdult        Float @default(1)
+  taxRateChild7to14   Float @default(0.5)
+  taxRateOtherChild   Float @default(0)
+  // Comma-separated list, e.g. "Cash,Card,Bank Transfer".
+  paymentMethods    String   @default("Cash,Card,Bank Transfer")
+  updatedAt         DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// One price per date x product x room type, per adult. product is validated
+// in application code against the configurable Package list.
+model PriceListEntry {
+  id            String   @id @default(cuid())
+  date          DateTime
+  product       String
+  pricePerAdult Float
+  updatedAt     DateTime @updatedAt
+  roomTypeId    String
+  roomType      RoomType @relation(fields: [roomTypeId], references: [id])
+
+  @@unique([date, product, roomTypeId])
+  @@map("price_list_entries")
+}
