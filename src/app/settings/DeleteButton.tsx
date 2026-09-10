@@ -34,7 +34,7 @@ export function DeleteButton({
       >
         {isPending ? "Deleting…" : "Delete"}
       </button>
-      {error && <p className="max-w-56 text-xs font-medium text-zinc-900">{error}</p>}
+      {error && <p className="error-text max-w-56 text-xs">{error}</p>}
     </div>
   );
 }

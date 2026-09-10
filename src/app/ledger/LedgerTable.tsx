@@ -95,27 +95,27 @@ export function LedgerTable({
                 <td className="border-b border-zinc-100 px-4 py-2 group-hover:bg-zinc-50">
                   {STATUS_LABELS[r.status]}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
                   {money(r.baseAmount)}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
                   {money(r.discountAmount)}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
                   {money(r.taxAmount)}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
                   {money(r.finalAmount)}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
                   {money(r.totalDue)}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
                   {money(r.paid)}
                 </td>
                 <td
                   className={
-                    "border-b border-zinc-100 px-4 py-2 text-right group-hover:bg-zinc-50 " +
+                    "border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50 " +
                     (r.balance > 0 ? "font-semibold text-zinc-900" : "font-normal text-zinc-500")
                   }
                 >
@@ -137,16 +137,16 @@ export function LedgerTable({
                 <td className="sticky left-0 z-10 border-t border-zinc-200 bg-zinc-50 px-4 py-2" colSpan={9}>
                   Totals
                 </td>
-                <td className="border-t border-zinc-200 px-4 py-2 text-right">
+                <td className="border-t border-zinc-200 px-4 py-2 text-right font-mono">
                   {money(totals.finalAmount)}
                 </td>
-                <td className="border-t border-zinc-200 px-4 py-2 text-right">
+                <td className="border-t border-zinc-200 px-4 py-2 text-right font-mono">
                   {money(totals.totalDue)}
                 </td>
-                <td className="border-t border-zinc-200 px-4 py-2 text-right">
+                <td className="border-t border-zinc-200 px-4 py-2 text-right font-mono">
                   {money(totals.paid)}
                 </td>
-                <td className="border-t border-zinc-200 px-4 py-2 text-right">
+                <td className="border-t border-zinc-200 px-4 py-2 text-right font-mono">
                   {money(totals.balance)}
                 </td>
               </tr>

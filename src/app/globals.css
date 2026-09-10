@@ -1,33 +1,59 @@
 @import "tailwindcss";
 
 /*
- * This app is a single hardcoded light theme (no dark: variants anywhere),
- * so intentionally not wired to prefers-color-scheme. Body colors come from
- * the Tailwind classes on <body> in layout.tsx.
+ * Swiss International Typographic Style — Helvetica Neue, one signal red,
+ * off-black + white + cool grey, structure over decoration. Component
+ * classes below map onto the design-system brief 1:1 (radius 8px, 1.5px
+ * outline buttons, 2px accent focus ring offset 2px, etc).
+ *
+ * The Tailwind `zinc` scale is remapped here (not left at its default gray)
+ * so every existing `bg-zinc-*` / `text-zinc-*` / `border-zinc-*` utility
+ * already used across the app repaints in the new palette without touching
+ * each page. `--color-primary` (signal red) and `--color-accent` (deep
+ * blue, sparing use only) are new.
+ *
+ * Dark mode is intentionally not wired yet: a few components reuse zinc-900
+ * as both "dark fill" and "dark text" (e.g. the solid Booked calendar
+ * badge), which don't invert safely under one blanket rule — that needs a
+ * real per-component pass, not a token flip.
  */
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  /* Monochrome + neon: the one accent color, used sparingly (active nav,
-     today marker, focus states, small active badges) — never large surfaces. */
-  --color-accent: #c6ff00;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-jetbrains-mono);
+
+  --color-primary: #d82c2c;
+  --color-primary-hover: #c22626;
+  --color-accent: #0033a0;
+
+  --color-zinc-50: #f2f2f2;
+  --color-zinc-100: #ececec;
+  --color-zinc-200: #dadedd;
+  --color-zinc-300: #c3c9c7;
+  --color-zinc-400: #a9b2b1;
+  --color-zinc-500: #6b7170;
+  --color-zinc-700: #3d3f3e;
+  --color-zinc-900: #1a1a1a;
+  --color-zinc-950: #0d0d0d;
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
 
 @layer components {
   .input {
-    @apply rounded-md border border-zinc-400 bg-white px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/40;
+    @apply rounded-lg border border-zinc-400 bg-white px-3 py-2.5 text-[0.9375rem] text-zinc-900 outline-none transition-colors duration-200 focus:border-accent focus:ring-2 focus:ring-accent focus:ring-offset-2;
   }
   .btn-primary {
-    @apply rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700;
+    @apply rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary-hover hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] active:translate-y-0 active:shadow-none disabled:pointer-events-none disabled:opacity-60;
   }
   .btn-secondary {
-    @apply rounded-md border border-zinc-400 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50;
+    @apply rounded-lg border-[1.5px] border-zinc-400 bg-white px-4 py-[7px] text-sm font-medium text-primary transition-colors duration-200 hover:bg-zinc-50;
   }
   .btn-danger {
-    @apply rounded-md border border-zinc-900 bg-white px-3 py-1.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-900 hover:text-white;
+    @apply rounded-lg border-[1.5px] border-primary bg-white px-4 py-[7px] text-sm font-medium text-primary transition-colors duration-200 hover:bg-primary hover:text-white;
+  }
+  .error-text {
+    @apply text-sm font-medium text-primary;
   }
 }

@@ -261,7 +261,7 @@ function StatCard({
         {label}
         {highlight && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
       </p>
-      <p className="mt-1 text-xl font-semibold text-zinc-900">{value}</p>
+      <p className="mt-1 font-mono text-xl font-semibold text-zinc-900">{value}</p>
     </div>
   );
 }

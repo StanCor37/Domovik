@@ -28,7 +28,7 @@ export function LoginForm() {
           className="input"
         />
       </label>
-      {state?.error && <p className="text-sm font-medium text-zinc-900">{state.error}</p>}
+      {state?.error && <p className="error-text">{state.error}</p>}
       <button type="submit" disabled={pending} className="btn-primary disabled:opacity-60">
         {pending ? "Signing in…" : "Sign in"}
       </button>

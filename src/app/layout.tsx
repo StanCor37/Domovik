@@ -1,17 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
 import { NavLinks } from "./NavLinks";
 import { UserMenu } from "./UserMenu";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
   subsets: ["latin"],
 });
 
@@ -22,13 +17,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${jetbrainsMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
-        <header className="border-b border-zinc-200 bg-white">
-          <nav className="mx-auto flex max-w-5xl items-center gap-6 px-6 py-4">
+        <header className="sticky top-0 z-[100] border-b border-zinc-200 bg-white">
+          <nav className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-4">
             <Link href="/" className="font-semibold tracking-tight">
               Domovik
             </Link>
@@ -36,7 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <UserMenu />
           </nav>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-10">
           {children}
         </main>
       </body>
