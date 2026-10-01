@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 /*
- * Swiss International Typographic Style — Helvetica Neue, one signal red,
- * off-black + white + cool grey, structure over decoration. Component
- * classes below map onto the design-system brief 1:1 (radius 8px, 1.5px
- * outline buttons, 2px accent focus ring offset 2px, etc).
+ * MedConnect-inspired palette — calm navy, warm paper, Inter throughout.
+ * Structure over decoration carries over from the previous Swiss pass;
+ * only the hues and typeface change. Component classes below still map
+ * onto the same design-system brief (radius 8px, 1.5px outline buttons,
+ * 2px accent focus ring offset 2px, etc).
  *
  * The Tailwind `zinc` scale is remapped here (not left at its default gray)
  * so every existing `bg-zinc-*` / `text-zinc-*` / `border-zinc-*` utility
  * already used across the app repaints in the new palette without touching
- * each page. `--color-primary` (signal red) and `--color-accent` (deep
- * blue, sparing use only) are new.
+ * each page. `--color-primary` (Care Navy) and `--color-accent` (Clinic
+ * Coral, sparing use only) are new.
  *
  * Dark mode is intentionally not wired yet: a few components reuse zinc-900
  * as both "dark fill" and "dark text" (e.g. the solid Booked calendar
@@ -18,22 +19,22 @@
  * real per-component pass, not a token flip.
  */
 @theme inline {
-  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono);
 
-  --color-primary: #d82c2c;
-  --color-primary-hover: #c22626;
-  --color-accent: #0033a0;
+  --color-primary: #16365c;
+  --color-primary-hover: #0f2846;
+  --color-accent: #e2604c;
 
-  --color-zinc-50: #f2f2f2;
-  --color-zinc-100: #ececec;
-  --color-zinc-200: #dadedd;
-  --color-zinc-300: #c3c9c7;
-  --color-zinc-400: #a9b2b1;
-  --color-zinc-500: #6b7170;
-  --color-zinc-700: #3d3f3e;
-  --color-zinc-900: #1a1a1a;
-  --color-zinc-950: #0d0d0d;
+  --color-zinc-50: #f5f3ee;
+  --color-zinc-100: #eef1f3;
+  --color-zinc-200: #dde3e8;
+  --color-zinc-300: #d0d8df;
+  --color-zinc-400: #c3cdd6;
+  --color-zinc-500: #5e6b78;
+  --color-zinc-700: #16365c;
+  --color-zinc-900: #0e1b24;
+  --color-zinc-950: #05090d;
 }
 
 body {
