@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatCurrency } from "@/lib/currency";
-import { STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
+import { STATUS_LABELS, STATUS_PILL_CLASSES, type ReservationStatus } from "@/lib/reservations";
 import { ReservationModal, type ModalTarget, type PackageOption, type RoomOption } from "../reservations/ReservationModal";
 
 export type LedgerRow = {
@@ -77,46 +77,53 @@ export function LedgerTable({
                 onClick={() => setTarget({ mode: "edit", reservationId: r.id })}
                 className="group cursor-pointer"
               >
-                <td className="sticky left-0 z-10 border-b border-zinc-100 bg-white px-4 py-2 font-medium group-hover:bg-zinc-50">
+                <td className="sticky left-0 z-10 border-b border-zinc-100 bg-white px-4 py-2 font-medium group-hover:bg-primary/5">
                   {r.reservationNumber}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 group-hover:bg-primary/5">
                   {r.guestName}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 group-hover:bg-primary/5">
                   {r.roomNumber}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 whitespace-nowrap group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 whitespace-nowrap group-hover:bg-primary/5">
                   {r.checkIn}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 whitespace-nowrap group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 whitespace-nowrap group-hover:bg-primary/5">
                   {r.checkOut}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 group-hover:bg-zinc-50">
-                  {STATUS_LABELS[r.status]}
+                <td className="border-b border-zinc-100 px-4 py-2 group-hover:bg-primary/5">
+                  <span
+                    className={
+                      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap " +
+                      STATUS_PILL_CLASSES[r.status]
+                    }
+                  >
+                    {STATUS_LABELS[r.status]}
+                  </span>
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
                   {money(r.baseAmount)}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
                   {money(r.discountAmount)}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
                   {money(r.taxAmount)}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
                   {money(r.finalAmount)}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
                   {money(r.totalDue)}
                 </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50">
+                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
                   {money(r.paid)}
                 </td>
                 <td
                   className={
-                    "border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-zinc-50 " +
-                    (r.balance > 0 ? "font-semibold text-zinc-900" : "font-normal text-zinc-500")
+                    "border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5 " +
+                    (r.balance > 0 ? "font-semibold text-danger-ink" : "font-normal text-zinc-500")
                   }
                 >
                   {money(r.balance)}

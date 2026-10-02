@@ -1,17 +1,21 @@
 @import "tailwindcss";
 
 /*
- * MedConnect-inspired palette — calm navy, warm paper, Inter throughout.
- * Structure over decoration carries over from the previous Swiss pass;
- * only the hues and typeface change. Component classes below still map
- * onto the same design-system brief (radius 8px, 1.5px outline buttons,
- * 2px accent focus ring offset 2px, etc).
+ * Domovik design system — Ateneo Blue / Miami Coral palette, Inter
+ * throughout. Ported from the "Domovik Design System" artifact (Foundations,
+ * Components, Dashboard, Calendar and Ledger boards) — see those boards for
+ * the full rationale and swatches.
  *
  * The Tailwind `zinc` scale is remapped here (not left at its default gray)
  * so every existing `bg-zinc-*` / `text-zinc-*` / `border-zinc-*` utility
  * already used across the app repaints in the new palette without touching
- * each page. `--color-primary` (Care Navy) and `--color-accent` (Clinic
- * Coral, sparing use only) are new.
+ * each page. `--color-primary` (Ateneo Blue) and `--color-accent` (Miami
+ * Coral, small doses only — dots, active nav underline, today marker) carry
+ * the brand. Success/warning/danger are a separate semantic set for status
+ * and KPI color (dashboard tiles, payment status, occupancy) — each has a
+ * paler `-wash` background, a `-border` for its wash, and (for warning/
+ * danger, whose base hue is too light/saturated to read as text) a darker
+ * `-ink` variant for text sitting on that wash.
  *
  * Dark mode is intentionally not wired yet: a few components reuse zinc-900
  * as both "dark fill" and "dark text" (e.g. the solid Booked calendar
@@ -22,19 +26,36 @@
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono);
 
-  --color-primary: #16365c;
-  --color-primary-hover: #0f2846;
-  --color-accent: #e2604c;
+  --color-primary: #003a6c;
+  --color-primary-hover: #002848;
+  --color-accent: #fd8973;
 
-  --color-zinc-50: #f5f3ee;
-  --color-zinc-100: #eef1f3;
-  --color-zinc-200: #dde3e8;
-  --color-zinc-300: #d0d8df;
-  --color-zinc-400: #c3cdd6;
-  --color-zinc-500: #5e6b78;
-  --color-zinc-700: #16365c;
-  --color-zinc-900: #0e1b24;
-  --color-zinc-950: #05090d;
+  --color-success: #1e8e5a;
+  --color-success-wash: #e3f3ea;
+  --color-success-border: #bfe2cc;
+
+  --color-warning: #ffbf65;
+  --color-warning-ink: #8a5a12;
+  --color-warning-wash: #fff3de;
+  --color-warning-border: #ffe0a8;
+
+  --color-danger: #fd8973;
+  --color-danger-ink: #b5432a;
+  --color-danger-wash: #ffe8e2;
+  --color-danger-border: #fec9bc;
+
+  --color-info-wash: #e3ecf2;
+  --color-info-border: #c3d7e3;
+
+  --color-zinc-50: #f0eeeb;
+  --color-zinc-100: #e9e6e1;
+  --color-zinc-200: #ccd5da;
+  --color-zinc-300: #b7c2c9;
+  --color-zinc-400: #9facb5;
+  --color-zinc-500: #5b6b75;
+  --color-zinc-700: #003a6c;
+  --color-zinc-900: #13181b;
+  --color-zinc-950: #000000;
 }
 
 body {
@@ -55,6 +76,36 @@ body {
     @apply rounded-lg border-[1.5px] border-primary bg-white px-4 py-[7px] text-sm font-medium text-primary transition-colors duration-200 hover:bg-primary hover:text-white;
   }
   .error-text {
-    @apply text-sm font-medium text-primary;
+    @apply text-sm font-medium text-danger-ink;
+  }
+  .error-box {
+    @apply rounded-md border border-danger-border bg-danger-wash p-3 text-sm font-medium text-danger-ink;
+  }
+
+  /* Small branded header band for a page's <h1> — a navy-to-coral gradient
+     with a faint grain overlay. Reserved for top-level page headers
+     (Dashboard, Ledger, Login); working data screens (Calendar, Settings)
+     keep a plain heading so the grain stays a "brand moment", not wallpaper. */
+  .hero-band {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    padding: 20px 28px;
+    background:
+      radial-gradient(120% 100% at 100% 120%, rgba(253, 137, 115, 0.45) 0%, rgba(253, 137, 115, 0) 55%),
+      linear-gradient(160deg, #13181b 0%, #003a6c 75%, #0a4a82 100%);
+  }
+  .hero-band::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.1;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .hero-band > * {
+    position: relative;
+    z-index: 1;
   }
 }

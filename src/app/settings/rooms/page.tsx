@@ -93,11 +93,11 @@ export default async function RoomsSettingsPage() {
                           type="submit"
                           className={
                             room.active
-                              ? "inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-900"
+                              ? "inline-flex items-center gap-1.5 rounded-full bg-success-wash px-2.5 py-1 text-xs font-medium text-success"
                               : "inline-flex items-center gap-1.5 rounded-full bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-400"
                           }
                         >
-                          {room.active && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+                          {room.active && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
                           {room.active ? "Active" : "Inactive"}
                         </button>
                       </form>
@@ -109,12 +109,12 @@ export default async function RoomsSettingsPage() {
                           type="submit"
                           className={
                             room.availableForReservation
-                              ? "inline-flex items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-900"
+                              ? "inline-flex items-center gap-1.5 rounded-full bg-success-wash px-2.5 py-1 text-xs font-medium text-success"
                               : "inline-flex items-center gap-1.5 rounded-full bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-400 italic"
                           }
                         >
                           {room.availableForReservation && (
-                            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
                           )}
                           {room.availableForReservation
                             ? "Available"

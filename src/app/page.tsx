@@ -4,7 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { compareNatural } from "@/lib/sort";
 import { dateToIso, getSeasonRange, WEEKDAY_LABELS } from "@/lib/season";
 import { formatCurrency } from "@/lib/currency";
-import { OCCUPYING_STATUSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
+import {
+  OCCUPYING_STATUSES,
+  STATUS_LABELS,
+  STATUS_TAG_CLASSES,
+  type ReservationStatus,
+} from "@/lib/reservations";
 
 // Next.js doesn't apply the root layout's title template to a page at the
 // same "/" segment (only to nested routes), so this needs the full string.
@@ -35,7 +40,9 @@ export default async function DashboardPage({
   if (!property) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <div className="hero-band">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Dashboard</h1>
+        </div>
         <p className="text-zinc-500">
           Configure the{" "}
           <Link href="/settings/property" className="underline">
@@ -151,7 +158,9 @@ export default async function DashboardPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+      <div className="hero-band">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Dashboard</h1>
+      </div>
 
       {roomCount === 0 && (
         <p className="text-zinc-500">
@@ -164,10 +173,10 @@ export default async function DashboardPage({
       )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Occupied today" value={`${occupiedTodayCount} / ${roomCount}`} />
-        <StatCard label="Free today" value={String(freeTodayCount)} />
-        <StatCard label="Arrivals today" value={String(arrivalsToday.length)} />
-        <StatCard label="Departures today" value={String(departuresToday.length)} />
+        <StatCard tone="info" label="Occupied today" value={`${occupiedTodayCount} / ${roomCount}`} />
+        <StatCard tone="success" label="Free today" value={String(freeTodayCount)} />
+        <StatCard tone="info" label="Arrivals today" value={String(arrivalsToday.length)} />
+        <StatCard tone="warning" label="Departures today" value={String(departuresToday.length)} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -226,42 +235,72 @@ export default async function DashboardPage({
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard
+          tone="info"
           label={`Season occupancy (${year})`}
           value={`${occupancyPercent.toFixed(1)}%`}
         />
         <StatCard label="Total booked" value={formatCurrency(totalBooked, property.currency)} />
-        <StatCard label="Collected" value={formatCurrency(totalCollected, property.currency)} />
         <StatCard
+          tone="success"
+          label="Collected"
+          value={formatCurrency(totalCollected, property.currency)}
+        />
+        <StatCard
+          tone={outstanding > 0 ? "danger" : undefined}
           label="Outstanding"
           value={formatCurrency(outstanding, property.currency)}
-          highlight={outstanding > 0}
+          dot={outstanding > 0}
         />
       </div>
     </div>
   );
 }
 
+const STAT_CARD_TONE_CLASSES = {
+  info: { card: "bg-info-wash border-info-border", label: "text-primary", value: "text-primary" },
+  success: {
+    card: "bg-success-wash border-success-border",
+    label: "text-success",
+    value: "text-success",
+  },
+  warning: {
+    card: "bg-warning-wash border-warning-border",
+    label: "text-warning-ink",
+    value: "text-warning-ink",
+  },
+  danger: {
+    card: "bg-danger-wash border-danger-border",
+    label: "text-danger-ink",
+    value: "text-danger-ink",
+  },
+} as const;
+
 function StatCard({
   label,
   value,
-  highlight,
+  tone,
+  dot,
 }: {
   label: string;
   value: string;
-  highlight?: boolean;
+  tone?: keyof typeof STAT_CARD_TONE_CLASSES;
+  dot?: boolean;
 }) {
+  const toneClasses = tone ? STAT_CARD_TONE_CLASSES[tone] : null;
   return (
-    <div
-      className={
-        "rounded-lg border bg-white p-4 " +
-        (highlight ? "border-zinc-200 border-l-2 border-l-accent" : "border-zinc-200")
-      }
-    >
-      <p className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-zinc-500">
+    <div className={"rounded-lg border p-4 " + (toneClasses ? toneClasses.card : "border-zinc-200 bg-white")}>
+      <p
+        className={
+          "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide " +
+          (toneClasses ? toneClasses.label : "text-zinc-500")
+        }
+      >
         {label}
-        {highlight && <span className="h-1.5 w-1.5 rounded-full bg-accent" />}
+        {dot && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
       </p>
-      <p className="mt-1 font-mono text-xl font-semibold text-zinc-900">{value}</p>
+      <p className={"mt-1 font-mono text-xl font-semibold " + (toneClasses ? toneClasses.value : "text-zinc-900")}>
+        {value}
+      </p>
     </div>
   );
 }
@@ -282,16 +321,28 @@ function ReservationList({
         <p className="text-sm text-zinc-500">{emptyText}</p>
       ) : (
         <ul className="flex flex-col gap-1 text-sm">
-          {reservations.map((r) => (
-            <li key={r.id} className="flex items-center justify-between gap-2">
-              <span>
-                Room {r.room.number} · {r.guestName}
-              </span>
-              <span className="text-xs text-zinc-500">
-                {STATUS_LABELS[r.status as ReservationStatus]}
-              </span>
-            </li>
-          ))}
+          {reservations.map((r) => {
+            const status = r.status as ReservationStatus;
+            return (
+              <li
+                key={r.id}
+                className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1 -mx-1.5 hover:bg-primary/5"
+              >
+                <span>
+                  Room {r.room.number} · {r.guestName}
+                </span>
+                <span
+                  className={
+                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold " +
+                    STATUS_TAG_CLASSES[status]
+                  }
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  {STATUS_LABELS[status]}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

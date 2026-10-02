@@ -60,13 +60,13 @@ export function ImportForm({
       </div>
 
       {state.status === "success" && (
-        <p className="flex items-center gap-1.5 text-sm text-zinc-700">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+        <p className="flex items-center gap-1.5 text-sm text-success">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
           {state.message}
         </p>
       )}
       {state.status === "error" && (
-        <div className="rounded-md border border-zinc-900 bg-white p-3 text-sm font-medium text-zinc-900">
+        <div className="error-box">
           <p>{state.message}</p>
           {state.errors && state.errors.length > 0 && (
             <ul className="mt-1 list-inside list-disc font-normal">

@@ -36,3 +36,23 @@ export const STATUS_BLOCK_CLASSES: Record<ReservationStatus, string> = {
   PARTIALLY_CANCELED: "bg-zinc-300 text-zinc-900 font-medium",
   COMPLETED: "bg-zinc-100 text-zinc-500",
 };
+
+// Rounded status pill for a table cell (ledger) — a flatter, more compact
+// treatment than the calendar's occupancy bar, same status→color mapping.
+export const STATUS_PILL_CLASSES: Record<ReservationStatus, string> = {
+  PREBOOKED: "bg-zinc-100 text-zinc-700",
+  BOOKED: "bg-primary text-white",
+  CANCELED: "bg-zinc-50 text-zinc-400 ring-1 ring-inset ring-zinc-200",
+  PARTIALLY_CANCELED: "bg-zinc-300 text-zinc-900",
+  COMPLETED: "bg-zinc-100 text-zinc-500",
+};
+
+// Status dot+label tag for a list row (dashboard arrivals/departures). Only
+// the occupying statuses realistically show up here.
+export const STATUS_TAG_CLASSES: Record<ReservationStatus, string> = {
+  PREBOOKED: "bg-warning-wash text-warning-ink",
+  BOOKED: "bg-info-wash text-primary",
+  CANCELED: "bg-zinc-100 text-zinc-500",
+  PARTIALLY_CANCELED: "bg-zinc-100 text-zinc-700",
+  COMPLETED: "bg-zinc-100 text-zinc-500",
+};

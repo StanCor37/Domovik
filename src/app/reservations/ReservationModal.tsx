@@ -441,8 +441,8 @@ export function ReservationModal({
                     {money(preview.baseAmount)} · tax {money(preview.taxAmount)}
                   </p>
                   {preview.missingPriceDates.length > 0 && (
-                    <p className="flex items-start gap-1.5 font-medium text-zinc-900">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <p className="flex items-start gap-1.5 font-medium text-warning-ink">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
                       No price entered for: {preview.missingPriceDates.join(", ")}. Those
                       nights priced as 0 — set the final amount manually or fill in the{" "}
                       Price List.
@@ -499,7 +499,7 @@ export function ReservationModal({
                   <span className="text-sm font-medium text-zinc-700">Payments</span>
                   <span className="text-sm text-zinc-500">
                     Due {money(totalDue)} · Paid {money(totalPaid)} ·{" "}
-                    <span className={balanceDue > 0 ? "font-semibold text-zinc-900" : "font-normal text-zinc-500"}>
+                    <span className={balanceDue > 0 ? "font-semibold text-danger-ink" : "font-normal text-zinc-500"}>
                       Balance {money(balanceDue)}
                     </span>
                   </span>
@@ -578,7 +578,7 @@ export function ReservationModal({
                     {isSavingPayment ? "Saving…" : "+ Add payment"}
                   </button>
                 </div>
-                {paymentError && <p className="text-sm font-medium text-zinc-900">{paymentError}</p>}
+                {paymentError && <p className="error-text">{paymentError}</p>}
               </div>
             ) : (
               <p className="text-sm text-zinc-500">
@@ -587,7 +587,7 @@ export function ReservationModal({
             )}
 
             {error && (
-              <div className="rounded-md border border-zinc-900 bg-white p-3 text-sm font-medium text-zinc-900">
+              <div className="error-box">
                 <p>{error}</p>
                 {conflict && (
                   <p className="mt-1">
