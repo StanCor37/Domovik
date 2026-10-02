@@ -6,6 +6,7 @@ import { dateToIso } from "@/lib/season";
 import { parsePaymentMethods } from "@/lib/paymentMethods";
 import { matchesSearch } from "@/lib/serbianSearch";
 import { RESERVATION_STATUSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
+import { Button, Field, PageHeader } from "@/components/ui";
 import { LedgerTable, type LedgerRow } from "./LedgerTable";
 import type { RoomOption } from "../reservations/ReservationModal";
 
@@ -144,17 +145,12 @@ export default async function LedgerPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="hero-band">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">
-          Outgoing Invoices Ledger
-        </h1>
-      </div>
+      <PageHeader title="Outgoing Invoices Ledger" />
 
       <form className="flex flex-wrap items-end gap-3" action="/ledger" method="get">
         <input type="hidden" name="sort" value={sortKey} />
         <input type="hidden" name="dir" value={dir} />
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-700">Search</span>
+        <Field label="Search">
           <input
             type="text"
             name="q"
@@ -162,9 +158,8 @@ export default async function LedgerPage({
             placeholder="Guest, reservation #, room"
             className="input w-64"
           />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-700">Status</span>
+        </Field>
+        <Field label="Status">
           <select name="status" defaultValue={statusFilter ?? ""} className="input">
             <option value="">All statuses</option>
             {RESERVATION_STATUSES.map((s) => (
@@ -173,14 +168,12 @@ export default async function LedgerPage({
               </option>
             ))}
           </select>
-        </label>
-        <button type="submit" className="btn-primary">
-          Filter
-        </button>
+        </Field>
+        <Button type="submit">Filter</Button>
         {(q || statusFilter) && (
-          <Link href="/ledger" className="btn-secondary">
+          <Button href="/ledger" variant="secondary">
             Clear
-          </Link>
+          </Button>
         )}
       </form>
 

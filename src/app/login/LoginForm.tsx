@@ -1,15 +1,15 @@
 "use client";
 
 import { useActionState } from "react";
+import { Button, Field } from "@/components/ui";
 import { login } from "./actions";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState(login, undefined);
 
   return (
-    <form action={action} className="mt-6 flex flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-zinc-700">Email</span>
+    <form action={action} className="flex flex-col gap-4">
+      <Field label="Email">
         <input
           name="email"
           type="email"
@@ -17,9 +17,8 @@ export function LoginForm() {
           autoComplete="email"
           className="input"
         />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium text-zinc-700">Password</span>
+      </Field>
+      <Field label="Password">
         <input
           name="password"
           type="password"
@@ -27,11 +26,11 @@ export function LoginForm() {
           autoComplete="current-password"
           className="input"
         />
-      </label>
+      </Field>
       {state?.error && <p className="error-text">{state.error}</p>}
-      <button type="submit" disabled={pending} className="btn-primary disabled:opacity-60">
+      <Button type="submit" disabled={pending} className="disabled:opacity-60">
         {pending ? "Signing in…" : "Sign in"}
-      </button>
+      </Button>
     </form>
   );
 }

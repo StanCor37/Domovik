@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { Button, EmptyRow, Field, FormCard, PageTitle, Table, TableWrap, Td, THead, Th, Tr } from "@/components/ui";
 import {
   createSmenaPeriod,
   deleteSmenaPeriod,
@@ -16,23 +17,13 @@ export default async function SmenaSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Season & Smena
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          The smena is a recurring pattern, not a rigid calendar container —
-          the calendar itself stays day-based.
-        </p>
-      </div>
+      <PageTitle
+        title="Season & Smena"
+        description="The smena is a recurring pattern, not a rigid calendar container — the calendar itself stays day-based."
+      />
 
-      <form
-        action={updateSmenaLength}
-        className="flex max-w-sm flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6"
-      >
-        <h2 className="font-medium">Default smena length</h2>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-700">Nights</span>
+      <FormCard title="Default smena length" action={updateSmenaLength} maxWidth="max-w-sm">
+        <Field label="Nights">
           <input
             name="smenaLengthNights"
             type="number"
@@ -41,61 +32,44 @@ export default async function SmenaSettingsPage() {
             required
             className="input"
           />
-        </label>
-        <button type="submit" className="btn-primary self-start">
+        </Field>
+        <Button type="submit" className="self-start">
           Save
-        </button>
-      </form>
+        </Button>
+      </FormCard>
 
-      <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
-              <th className="px-4 py-3">Label</th>
-              <th className="px-4 py-3">Start (MM-DD)</th>
-              <th className="px-4 py-3">End (MM-DD)</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
+      <TableWrap>
+        <Table>
+          <THead>
+            <Th>Label</Th>
+            <Th>Start (MM-DD)</Th>
+            <Th>End (MM-DD)</Th>
+            <Th />
+          </THead>
           <tbody>
             {periods.map((period) => (
-              <tr
-                key={period.id}
-                className="border-b border-zinc-100 last:border-0"
-              >
-                <td className="px-4 py-3 font-medium">{period.label}</td>
-                <td className="px-4 py-3 text-zinc-500">
-                  {period.startMonthDay}
-                </td>
-                <td className="px-4 py-3 text-zinc-500">
-                  {period.endMonthDay}
-                </td>
-                <td className="px-4 py-3">
+              <Tr key={period.id}>
+                <Td className="font-medium">{period.label}</Td>
+                <Td className="text-zinc-500">{period.startMonthDay}</Td>
+                <Td className="text-zinc-500">{period.endMonthDay}</Td>
+                <Td>
                   <form action={deleteSmenaPeriod}>
                     <input type="hidden" name="id" value={period.id} />
-                    <button type="submit" className="btn-danger">
+                    <Button type="submit" variant="danger">
                       Delete
-                    </button>
+                    </Button>
                   </form>
-                </td>
-              </tr>
+                </Td>
+              </Tr>
             ))}
             {periods.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-6 text-center text-zinc-500">
-                  No smena periods yet. Add one below.
-                </td>
-              </tr>
+              <EmptyRow colSpan={4}>No smena periods yet. Add one below.</EmptyRow>
             )}
           </tbody>
-        </table>
-      </div>
+        </Table>
+      </TableWrap>
 
-      <form
-        action={createSmenaPeriod}
-        className="flex max-w-2xl flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6"
-      >
-        <h2 className="font-medium">Add smena period</h2>
+      <FormCard title="Add smena period" action={createSmenaPeriod} maxWidth="max-w-2xl">
         <div className="grid grid-cols-3 gap-4">
           <Field label="Label">
             <input name="label" required className="input" placeholder="Smena 1" />
@@ -119,25 +93,10 @@ export default async function SmenaSettingsPage() {
             />
           </Field>
         </div>
-        <button type="submit" className="btn-primary self-start">
+        <Button type="submit" className="self-start">
           Add period
-        </button>
-      </form>
+        </Button>
+      </FormCard>
     </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium text-zinc-700">{label}</span>
-      {children}
-    </label>
   );
 }

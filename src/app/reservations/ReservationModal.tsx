@@ -13,6 +13,7 @@ import {
 import type { Product } from "@/lib/products";
 import { formatCurrency } from "@/lib/currency";
 import { RESERVATION_STATUSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
+import { Button, Field } from "@/components/ui";
 import {
   addPayment,
   cancelReservation,
@@ -381,13 +382,13 @@ export function ReservationModal({
             <div>
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-sm font-medium text-zinc-700">Guests</span>
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => setGuests((prev) => [...prev, newGuest()])}
-                  className="btn-secondary"
                 >
                   + Add guest
-                </button>
+                </Button>
               </div>
               <div className="flex flex-col gap-2">
                 {guests.map((guest, index) => (
@@ -418,14 +419,15 @@ export function ReservationModal({
                         </option>
                       ))}
                     </select>
-                    <button
+                    <Button
                       type="button"
+                      variant="danger"
                       onClick={() => removeGuest(index)}
                       disabled={guests.length === 1}
-                      className="btn-danger disabled:cursor-not-allowed disabled:opacity-40"
+                      className="disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Remove
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -569,14 +571,15 @@ export function ReservationModal({
                       className="input"
                     />
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
                     onClick={handleAddPayment}
                     disabled={isSavingPayment}
-                    className="btn-secondary disabled:opacity-60"
+                    className="disabled:opacity-60"
                   >
                     {isSavingPayment ? "Saving…" : "+ Add payment"}
-                  </button>
+                  </Button>
                 </div>
                 {paymentError && <p className="error-text">{paymentError}</p>}
               </div>
@@ -602,18 +605,19 @@ export function ReservationModal({
               <div>
                 {reservationId && status !== "CANCELED" && (
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="danger"
                       onClick={handleCancelReservation}
                       disabled={isCanceling}
-                      className="btn-danger disabled:opacity-60"
+                      className="disabled:opacity-60"
                     >
                       {isCanceling
                         ? "Canceling…"
                         : confirmingCancel
                           ? "Click again to confirm"
                           : "Cancel Reservation"}
-                    </button>
+                    </Button>
                     {confirmingCancel && !isCanceling && (
                       <button
                         type="button"
@@ -627,31 +631,22 @@ export function ReservationModal({
                 )}
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={onClose} className="btn-secondary">
+                <Button type="button" variant="secondary" onClick={onClose}>
                   Close
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="btn-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  className="disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSaving ? "Saving…" : "Save"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium text-zinc-700">{label}</span>
-      {children}
-    </label>
   );
 }

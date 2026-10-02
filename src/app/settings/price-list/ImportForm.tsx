@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Button, Field, FormCard } from "@/components/ui";
 import { importPriceList } from "./actions";
 import { initialImportState } from "./types";
 
@@ -17,14 +18,9 @@ export function ImportForm({
   );
 
   return (
-    <form
-      action={formAction}
-      className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6"
-    >
-      <h2 className="font-medium">Import from Excel</h2>
+    <FormCard action={formAction} title="Import from Excel">
       <div className="flex flex-wrap items-end gap-4">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-700">Room type</span>
+        <Field label="Room type">
           <select name="roomTypeId" defaultValue={defaultRoomTypeId} className="input">
             {roomTypes.map((rt) => (
               <option key={rt.id} value={rt.id}>
@@ -32,9 +28,8 @@ export function ImportForm({
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-700">File (.xlsx)</span>
+        </Field>
+        <Field label="File (.xlsx)">
           <input
             type="file"
             name="file"
@@ -42,7 +37,7 @@ export function ImportForm({
             required
             className="text-sm"
           />
-        </label>
+        </Field>
         <fieldset className="flex flex-col gap-1 text-sm">
           <legend className="font-medium text-zinc-700">Mode</legend>
           <label className="flex items-center gap-1.5">
@@ -54,9 +49,9 @@ export function ImportForm({
             Replace all
           </label>
         </fieldset>
-        <button type="submit" disabled={isPending} className="btn-primary">
+        <Button type="submit" disabled={isPending}>
           {isPending ? "Importing…" : "Import"}
-        </button>
+        </Button>
       </div>
 
       {state.status === "success" && (
@@ -77,6 +72,6 @@ export function ImportForm({
           )}
         </div>
       )}
-    </form>
+    </FormCard>
   );
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { Button, Field, FormCard, PageTitle } from "@/components/ui";
 import { updatePaymentMethods } from "./actions";
 
 export const metadata: Metadata = { title: "Payment Methods" };
@@ -11,22 +12,13 @@ export default async function PaymentMethodsSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Payment Methods
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Comma-separated list. These appear as options when logging a
-          payment against a reservation.
-        </p>
-      </div>
+      <PageTitle
+        title="Payment Methods"
+        description="Comma-separated list. These appear as options when logging a payment against a reservation."
+      />
 
-      <form
-        action={updatePaymentMethods}
-        className="flex max-w-md flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6"
-      >
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-700">Methods</span>
+      <FormCard action={updatePaymentMethods} maxWidth="max-w-md">
+        <Field label="Methods">
           <input
             name="paymentMethods"
             defaultValue={settings?.paymentMethods ?? "Cash,Card,Bank Transfer"}
@@ -34,11 +26,11 @@ export default async function PaymentMethodsSettingsPage() {
             className="input"
             placeholder="Cash,Card,Bank Transfer"
           />
-        </label>
-        <button type="submit" className="btn-primary self-start">
+        </Field>
+        <Button type="submit" className="self-start">
           Save
-        </button>
-      </form>
+        </Button>
+      </FormCard>
     </div>
   );
 }

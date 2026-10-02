@@ -8,6 +8,7 @@ import {
   MONTH_LABELS,
   dateToIso,
 } from "@/lib/season";
+import { Button, FormCard, PageTitle, SegmentedLink } from "@/components/ui";
 import { savePriceListMonth } from "./actions";
 import { ImportForm } from "./ImportForm";
 
@@ -30,7 +31,7 @@ export default async function PriceListPage({
   if (!property) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Price List</h1>
+        <PageTitle title="Price List" />
         <p className="text-zinc-500">
           Configure the{" "}
           <Link href="/settings/property" className="underline">
@@ -45,7 +46,7 @@ export default async function PriceListPage({
   if (roomTypes.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Price List</h1>
+        <PageTitle title="Price List" />
         <p className="text-zinc-500">
           The Price List is scoped per room type. Add at least one in{" "}
           <Link href="/settings/room-types" className="underline">
@@ -59,7 +60,7 @@ export default async function PriceListPage({
   if (packages.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Price List</h1>
+        <PageTitle title="Price List" />
         <p className="text-zinc-500">
           No packages configured yet. Add at least one in{" "}
           <Link href="/settings/packages" className="underline">
@@ -108,66 +109,42 @@ export default async function PriceListPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Price List
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            One price per day per package per room type, per adult.
-            Guest-category multipliers apply on top at booking time.
-          </p>
-        </div>
-        <a
-          href={`/api/price-list/template?year=${year}`}
-          className="btn-secondary"
-        >
-          Download template ({year})
-        </a>
-      </div>
+      <PageTitle
+        title="Price List"
+        description="One price per day per package per room type, per adult. Guest-category multipliers apply on top at booking time."
+        action={
+          <Button href={`/api/price-list/template?year=${year}`} variant="secondary">
+            Download template ({year})
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap gap-1">
         {roomTypes.map((rt) => (
-          <Link
-            key={rt.id}
-            href={qs({ roomTypeId: rt.id })}
-            className={
-              rt.id === roomTypeId
-                ? "rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white"
-                : "rounded-md border border-zinc-400 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-            }
-          >
+          <SegmentedLink key={rt.id} href={qs({ roomTypeId: rt.id })} active={rt.id === roomTypeId}>
             {rt.name}
-          </Link>
+          </SegmentedLink>
         ))}
       </div>
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 text-sm">
-          <Link href={qs({ year: year - 1 })} className="btn-secondary">
+          <Button href={qs({ year: year - 1 })} variant="secondary">
             ← {year - 1}
-          </Link>
+          </Button>
           <span className="font-medium">{year}</span>
-          <Link href={qs({ year: year + 1 })} className="btn-secondary">
+          <Button href={qs({ year: year + 1 })} variant="secondary">
             {year + 1} →
-          </Link>
-          <Link href={`?roomTypeId=${roomTypeId}`} className="btn-secondary">
+          </Button>
+          <Button href={`?roomTypeId=${roomTypeId}`} variant="secondary">
             Today
-          </Link>
+          </Button>
         </div>
         <div className="flex flex-wrap gap-1">
           {seasonMonths.map((m) => (
-            <Link
-              key={m}
-              href={qs({ month: m })}
-              className={
-                m === month
-                  ? "rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white"
-                  : "rounded-md border border-zinc-400 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-              }
-            >
+            <SegmentedLink key={m} href={qs({ month: m })} active={m === month}>
               {MONTH_LABELS[m - 1]}
-            </Link>
+            </SegmentedLink>
           ))}
         </div>
       </div>
@@ -178,10 +155,7 @@ export default async function PriceListPage({
           configured season.
         </p>
       ) : (
-        <form
-          action={savePriceListMonth}
-          className="flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6"
-        >
+        <FormCard action={savePriceListMonth}>
           <input type="hidden" name="roomTypeId" value={roomTypeId} />
           <div className="max-h-[60vh] overflow-auto rounded-md border border-zinc-200">
             <table className="w-full border-separate border-spacing-0 text-sm">
@@ -224,10 +198,10 @@ export default async function PriceListPage({
               </tbody>
             </table>
           </div>
-          <button type="submit" className="btn-primary self-start">
+          <Button type="submit" className="self-start">
             Save {MONTH_LABELS[month - 1]}
-          </button>
-        </form>
+          </Button>
+        </FormCard>
       )}
 
       <ImportForm

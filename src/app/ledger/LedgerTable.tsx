@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { formatCurrency } from "@/lib/currency";
-import { STATUS_LABELS, STATUS_PILL_CLASSES, type ReservationStatus } from "@/lib/reservations";
+import { type ReservationStatus } from "@/lib/reservations";
+import { StatusPill, Table, TableWrap, Td, THead, Th, Tr } from "@/components/ui";
 import { ReservationModal, type ModalTarget, type PackageOption, type RoomOption } from "../reservations/ReservationModal";
 
 export type LedgerRow = {
@@ -51,84 +52,77 @@ export function LedgerTable({
 
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-        <table className="w-full border-separate border-spacing-0 text-sm">
-          <thead>
-            <tr className="bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
-              <Th sticky>Reservation #</Th>
-              <Th>Guest</Th>
-              <Th>Room</Th>
-              <Th>Check-in</Th>
-              <Th>Check-out</Th>
-              <Th>Status</Th>
-              <Th align="right">Base</Th>
-              <Th align="right">Discount</Th>
-              <Th align="right">Tax</Th>
-              <Th align="right">Final</Th>
-              <Th align="right">Due</Th>
-              <Th align="right">Paid</Th>
-              <Th align="right">Balance</Th>
-            </tr>
-          </thead>
+      <TableWrap>
+        <Table className="border-separate border-spacing-0">
+          {/* This table uses border-separate (for the sticky first column), where
+              a <tr>'s own border doesn't render — every cell carries its border. */}
+          <THead>
+            <Th sticky className="border-b border-zinc-200">Reservation #</Th>
+            <Th className="border-b border-zinc-200">Guest</Th>
+            <Th className="border-b border-zinc-200">Room</Th>
+            <Th className="border-b border-zinc-200">Check-in</Th>
+            <Th className="border-b border-zinc-200">Check-out</Th>
+            <Th className="border-b border-zinc-200">Status</Th>
+            <Th align="right" className="border-b border-zinc-200">Base</Th>
+            <Th align="right" className="border-b border-zinc-200">Discount</Th>
+            <Th align="right" className="border-b border-zinc-200">Tax</Th>
+            <Th align="right" className="border-b border-zinc-200">Final</Th>
+            <Th align="right" className="border-b border-zinc-200">Due</Th>
+            <Th align="right" className="border-b border-zinc-200">Paid</Th>
+            <Th align="right" className="border-b border-zinc-200">Balance</Th>
+          </THead>
           <tbody>
             {rows.map((r) => (
-              <tr
+              <Tr
                 key={r.id}
                 onClick={() => setTarget({ mode: "edit", reservationId: r.id })}
                 className="group cursor-pointer"
               >
-                <td className="sticky left-0 z-10 border-b border-zinc-100 bg-white px-4 py-2 font-medium group-hover:bg-primary/5">
+                <Td className="sticky left-0 z-10 whitespace-nowrap border-b border-zinc-100 bg-white font-medium group-hover:bg-primary/5">
                   {r.reservationNumber}
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 group-hover:bg-primary/5">
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 group-hover:bg-primary/5">
                   {r.guestName}
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 group-hover:bg-primary/5">
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 group-hover:bg-primary/5">
                   {r.roomNumber}
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 whitespace-nowrap group-hover:bg-primary/5">
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 group-hover:bg-primary/5">
                   {r.checkIn}
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 whitespace-nowrap group-hover:bg-primary/5">
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 group-hover:bg-primary/5">
                   {r.checkOut}
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 group-hover:bg-primary/5">
-                  <span
-                    className={
-                      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap " +
-                      STATUS_PILL_CLASSES[r.status]
-                    }
-                  >
-                    {STATUS_LABELS[r.status]}
-                  </span>
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 group-hover:bg-primary/5">
+                  <StatusPill status={r.status} />
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 text-right font-mono group-hover:bg-primary/5">
                   {money(r.baseAmount)}
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 text-right font-mono group-hover:bg-primary/5">
                   {money(r.discountAmount)}
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 text-right font-mono group-hover:bg-primary/5">
                   {money(r.taxAmount)}
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 text-right font-mono group-hover:bg-primary/5">
                   {money(r.finalAmount)}
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 text-right font-mono group-hover:bg-primary/5">
                   {money(r.totalDue)}
-                </td>
-                <td className="border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5">
+                </Td>
+                <Td className="whitespace-nowrap border-b border-zinc-100 text-right font-mono group-hover:bg-primary/5">
                   {money(r.paid)}
-                </td>
-                <td
+                </Td>
+                <Td
                   className={
-                    "border-b border-zinc-100 px-4 py-2 text-right font-mono group-hover:bg-primary/5 " +
+                    "whitespace-nowrap border-b border-zinc-100 text-right font-mono group-hover:bg-primary/5 " +
                     (r.balance > 0 ? "font-semibold text-danger-ink" : "font-normal text-zinc-500")
                   }
                 >
                   {money(r.balance)}
-                </td>
-              </tr>
+                </Td>
+              </Tr>
             ))}
             {rows.length === 0 && (
               <tr>
@@ -159,8 +153,8 @@ export function LedgerTable({
               </tr>
             </tfoot>
           )}
-        </table>
-      </div>
+        </Table>
+      </TableWrap>
 
       {target && (
         <ReservationModal
@@ -173,27 +167,5 @@ export function LedgerTable({
         />
       )}
     </>
-  );
-}
-
-function Th({
-  children,
-  align = "left",
-  sticky = false,
-}: {
-  children: React.ReactNode;
-  align?: "left" | "right";
-  sticky?: boolean;
-}) {
-  return (
-    <th
-      className={
-        "border-b border-zinc-200 px-4 py-2 whitespace-nowrap " +
-        (align === "right" ? "text-right " : "text-left ") +
-        (sticky ? "sticky left-0 z-20 bg-zinc-50" : "")
-      }
-    >
-      {children}
-    </th>
   );
 }

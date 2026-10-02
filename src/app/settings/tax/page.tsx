@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { Button, Field, FormCard, PageTitle } from "@/components/ui";
 import { updateTaxRates } from "./actions";
 
 export const metadata: Metadata = { title: "Tax" };
@@ -11,21 +12,12 @@ export default async function TaxSettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Tax
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Local tax is calculated per occupied night, per guest, based on
-          each guest&apos;s tax category (independent of their price
-          category).
-        </p>
-      </div>
+      <PageTitle
+        title="Tax"
+        description="Local tax is calculated per occupied night, per guest, based on each guest's tax category (independent of their price category)."
+      />
 
-      <form
-        action={updateTaxRates}
-        className="flex max-w-sm flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6"
-      >
+      <FormCard action={updateTaxRates} maxWidth="max-w-sm">
         <Field label="Adult — per night">
           <input
             name="taxRateAdult"
@@ -59,25 +51,10 @@ export default async function TaxSettingsPage() {
             className="input"
           />
         </Field>
-        <button type="submit" className="btn-primary self-start">
+        <Button type="submit" className="self-start">
           Save
-        </button>
-      </form>
+        </Button>
+      </FormCard>
     </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium text-zinc-700">{label}</span>
-      {children}
-    </label>
   );
 }

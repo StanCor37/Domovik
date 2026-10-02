@@ -4,12 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { compareNatural } from "@/lib/sort";
 import { dateToIso, getSeasonRange, WEEKDAY_LABELS } from "@/lib/season";
 import { formatCurrency } from "@/lib/currency";
-import {
-  OCCUPYING_STATUSES,
-  STATUS_LABELS,
-  STATUS_TAG_CLASSES,
-  type ReservationStatus,
-} from "@/lib/reservations";
+import { OCCUPYING_STATUSES, type ReservationStatus } from "@/lib/reservations";
+import { Button, PageHeader, StatCard, StatusTag, Table, TableWrap, Td, THead, Th, Tr } from "@/components/ui";
 
 // Next.js doesn't apply the root layout's title template to a page at the
 // same "/" segment (only to nested routes), so this needs the full string.
@@ -40,9 +36,7 @@ export default async function DashboardPage({
   if (!property) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="hero-band">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Dashboard</h1>
-        </div>
+        <PageHeader title="Dashboard" />
         <p className="text-zinc-500">
           Configure the{" "}
           <Link href="/settings/property" className="underline">
@@ -158,9 +152,7 @@ export default async function DashboardPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="hero-band">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">Dashboard</h1>
-      </div>
+      <PageHeader title="Dashboard" />
 
       {roomCount === 0 && (
         <p className="text-zinc-500">
@@ -194,43 +186,41 @@ export default async function DashboardPage({
 
       <div>
         <h2 className="mb-2 font-medium">Next 7 days</h2>
-        <div className="overflow-x-auto rounded-lg border border-zinc-200 bg-white">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-500">
-                <th className="px-4 py-2">Date</th>
-                <th className="px-4 py-2">Arrivals</th>
-                <th className="px-4 py-2">Departures</th>
-                <th className="px-4 py-2">Occupied</th>
-                <th className="px-4 py-2">Free</th>
-              </tr>
-            </thead>
+        <TableWrap>
+          <Table>
+            <THead>
+              <Th>Date</Th>
+              <Th>Arrivals</Th>
+              <Th>Departures</Th>
+              <Th>Occupied</Th>
+              <Th>Free</Th>
+            </THead>
             <tbody>
               {forecast.map((day) => (
-                <tr key={day.iso} className="border-b border-zinc-100 last:border-0">
-                  <td className="px-4 py-2 font-medium">
+                <Tr key={day.iso}>
+                  <Td className="font-medium">
                     {day.weekday} {day.dayOfMonth}
-                  </td>
-                  <td className="px-4 py-2">{day.arrivals}</td>
-                  <td className="px-4 py-2">{day.departures}</td>
-                  <td className="px-4 py-2">{day.occupied}</td>
-                  <td className="px-4 py-2">{day.free}</td>
-                </tr>
+                  </Td>
+                  <Td>{day.arrivals}</Td>
+                  <Td>{day.departures}</Td>
+                  <Td>{day.occupied}</Td>
+                  <Td>{day.free}</Td>
+                </Tr>
               ))}
             </tbody>
-          </table>
-        </div>
+          </Table>
+        </TableWrap>
       </div>
 
       <div className="flex items-center gap-2 text-sm">
         <span className="text-zinc-500">Season stats:</span>
-        <Link href={`/?year=${year - 1}`} className="btn-secondary">
+        <Button href={`/?year=${year - 1}`} variant="secondary">
           ← {year - 1}
-        </Link>
+        </Button>
         <span className="font-medium">{year}</span>
-        <Link href={`/?year=${year + 1}`} className="btn-secondary">
+        <Button href={`/?year=${year + 1}`} variant="secondary">
           {year + 1} →
-        </Link>
+        </Button>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -256,55 +246,6 @@ export default async function DashboardPage({
   );
 }
 
-const STAT_CARD_TONE_CLASSES = {
-  info: { card: "bg-info-wash border-info-border", label: "text-primary", value: "text-primary" },
-  success: {
-    card: "bg-success-wash border-success-border",
-    label: "text-success",
-    value: "text-success",
-  },
-  warning: {
-    card: "bg-warning-wash border-warning-border",
-    label: "text-warning-ink",
-    value: "text-warning-ink",
-  },
-  danger: {
-    card: "bg-danger-wash border-danger-border",
-    label: "text-danger-ink",
-    value: "text-danger-ink",
-  },
-} as const;
-
-function StatCard({
-  label,
-  value,
-  tone,
-  dot,
-}: {
-  label: string;
-  value: string;
-  tone?: keyof typeof STAT_CARD_TONE_CLASSES;
-  dot?: boolean;
-}) {
-  const toneClasses = tone ? STAT_CARD_TONE_CLASSES[tone] : null;
-  return (
-    <div className={"rounded-lg border p-4 " + (toneClasses ? toneClasses.card : "border-zinc-200 bg-white")}>
-      <p
-        className={
-          "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide " +
-          (toneClasses ? toneClasses.label : "text-zinc-500")
-        }
-      >
-        {label}
-        {dot && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
-      </p>
-      <p className={"mt-1 font-mono text-xl font-semibold " + (toneClasses ? toneClasses.value : "text-zinc-900")}>
-        {value}
-      </p>
-    </div>
-  );
-}
-
 function ReservationList({
   title,
   reservations,
@@ -321,28 +262,17 @@ function ReservationList({
         <p className="text-sm text-zinc-500">{emptyText}</p>
       ) : (
         <ul className="flex flex-col gap-1 text-sm">
-          {reservations.map((r) => {
-            const status = r.status as ReservationStatus;
-            return (
-              <li
-                key={r.id}
-                className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1 -mx-1.5 hover:bg-primary/5"
-              >
-                <span>
-                  Room {r.room.number} · {r.guestName}
-                </span>
-                <span
-                  className={
-                    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold " +
-                    STATUS_TAG_CLASSES[status]
-                  }
-                >
-                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  {STATUS_LABELS[status]}
-                </span>
-              </li>
-            );
-          })}
+          {reservations.map((r) => (
+            <li
+              key={r.id}
+              className="flex items-center justify-between gap-2 rounded-md px-1.5 py-1 -mx-1.5 hover:bg-primary/5"
+            >
+              <span>
+                Room {r.room.number} · {r.guestName}
+              </span>
+              <StatusTag status={r.status as ReservationStatus} />
+            </li>
+          ))}
         </ul>
       )}
     </div>

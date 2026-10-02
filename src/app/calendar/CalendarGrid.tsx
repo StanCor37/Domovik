@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { STATUS_BLOCK_CLASSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
+import { Button } from "@/components/ui";
 import { ReservationModal, type ModalTarget, type PackageOption, type RoomOption } from "../reservations/ReservationModal";
 
 export type DayInfo = {
@@ -71,19 +71,18 @@ export function CalendarGrid({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-2">
-        <button
+        <Button
           type="button"
           onClick={() => {
             const firstAvailable = rooms.find((r) => r.availableForReservation) ?? rooms[0];
             if (firstAvailable && days[0]) openCreate(firstAvailable.id, days[0].iso);
           }}
-          className="btn-primary"
         >
           + New Reservation
-        </button>
-        <Link href={todayHref} className="btn-secondary">
+        </Button>
+        <Button href={todayHref} variant="secondary">
           Today
-        </Link>
+        </Button>
       </div>
 
       <div className="max-h-[70vh] overflow-auto rounded-lg border border-zinc-200 bg-white">
