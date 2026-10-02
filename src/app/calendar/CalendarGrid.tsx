@@ -131,7 +131,7 @@ export function CalendarGrid({
                         key={day.iso}
                         className={
                           "h-8 min-w-9 cursor-pointer border-b border-zinc-100 hover:bg-zinc-50 " +
-                          (day.isToday ? "bg-accent/10" : "") +
+                          (day.isToday ? "bg-gradient-to-b from-accent/12 to-accent/3" : "") +
                           " " +
                           borderL
                         }
@@ -147,6 +147,7 @@ export function CalendarGrid({
                         "h-8 min-w-9 cursor-pointer border-b border-zinc-100 " +
                         (cell.isStart ? "pl-1" : "") +
                         (cell.isEnd ? " pr-1" : "") +
+                        (day.isToday ? " ring-1 ring-inset ring-accent/25" : "") +
                         " " +
                         borderL
                       }
@@ -159,8 +160,8 @@ export function CalendarGrid({
                         className={
                           "h-6 truncate text-center text-[10px] leading-6 " +
                           STATUS_BLOCK_CLASSES[cell.status] +
-                          (cell.isStart ? " rounded-l" : "") +
-                          (cell.isEnd ? " rounded-r" : "")
+                          (cell.isStart ? " rounded-l-lg" : "") +
+                          (cell.isEnd ? " rounded-r-lg" : "")
                         }
                       >
                         {cell.showLabel ? cell.guestName : ""}
