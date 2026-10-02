@@ -13,6 +13,7 @@ import {
 import { compareNatural } from "@/lib/sort";
 import { parsePaymentMethods } from "@/lib/paymentMethods";
 import { OCCUPYING_STATUSES, STATUS_BLOCK_CLASSES, type ReservationStatus } from "@/lib/reservations";
+import { Button, PageTitle, SegmentedLink } from "@/components/ui";
 import { CalendarGrid, type CellInfo, type DayInfo } from "./CalendarGrid";
 
 export const metadata: Metadata = { title: "Calendar" };
@@ -34,7 +35,7 @@ export default async function CalendarPage({
   if (!property) {
     return (
       <div className="flex flex-col gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
+        <PageTitle title="Calendar" />
         <p className="text-zinc-500">
           Configure the{" "}
           <Link href="/settings/property" className="underline">
@@ -144,38 +145,32 @@ export default async function CalendarPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
-          <LegendSwatch className="bg-white ring-1 ring-inset ring-zinc-400" label="Free" />
-          <LegendSwatch className={STATUS_BLOCK_CLASSES.BOOKED} label="Booked" />
-          <LegendSwatch className={STATUS_BLOCK_CLASSES.PREBOOKED} label="Prebooked" />
-        </div>
-      </div>
+      <PageTitle
+        title="Calendar"
+        action={
+          <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+            <LegendSwatch className="bg-white ring-1 ring-inset ring-zinc-400" label="Free" />
+            <LegendSwatch className={STATUS_BLOCK_CLASSES.BOOKED} label="Booked" />
+            <LegendSwatch className={STATUS_BLOCK_CLASSES.PREBOOKED} label="Prebooked" />
+          </div>
+        }
+      />
 
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 text-sm">
-          <Link href={`?year=${year - 1}&month=${month}`} className="btn-secondary">
+          <Button href={`?year=${year - 1}&month=${month}`} variant="secondary">
             ← {year - 1}
-          </Link>
+          </Button>
           <span className="font-medium">{year}</span>
-          <Link href={`?year=${year + 1}&month=${month}`} className="btn-secondary">
+          <Button href={`?year=${year + 1}&month=${month}`} variant="secondary">
             {year + 1} →
-          </Link>
+          </Button>
         </div>
         <div className="flex flex-wrap gap-1">
           {seasonMonths.map((m) => (
-            <Link
-              key={m}
-              href={`?year=${year}&month=${m}`}
-              className={
-                m === month
-                  ? "rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white"
-                  : "rounded-md border border-zinc-400 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-              }
-            >
+            <SegmentedLink key={m} href={`?year=${year}&month=${m}`} active={m === month}>
               {MONTH_LABELS[m - 1]}
-            </Link>
+            </SegmentedLink>
           ))}
         </div>
       </div>

@@ -13,6 +13,7 @@ import {
 import type { Product } from "@/lib/products";
 import { formatCurrency } from "@/lib/currency";
 import { RESERVATION_STATUSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
+import { Button, Field } from "@/components/ui";
 import {
   addPayment,
   cancelReservation,
@@ -280,11 +281,11 @@ export function ReservationModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
+        className="relative z-[300] flex max-h-[90vh] w-full max-w-2xl flex-col overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -381,13 +382,13 @@ export function ReservationModal({
             <div>
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-sm font-medium text-zinc-700">Guests</span>
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => setGuests((prev) => [...prev, newGuest()])}
-                  className="btn-secondary"
                 >
                   + Add guest
-                </button>
+                </Button>
               </div>
               <div className="flex flex-col gap-2">
                 {guests.map((guest, index) => (
@@ -418,14 +419,15 @@ export function ReservationModal({
                         </option>
                       ))}
                     </select>
-                    <button
+                    <Button
                       type="button"
+                      variant="danger"
                       onClick={() => removeGuest(index)}
                       disabled={guests.length === 1}
-                      className="btn-danger disabled:cursor-not-allowed disabled:opacity-40"
+                      className="disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Remove
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -441,8 +443,8 @@ export function ReservationModal({
                     {money(preview.baseAmount)} · tax {money(preview.taxAmount)}
                   </p>
                   {preview.missingPriceDates.length > 0 && (
-                    <p className="flex items-start gap-1.5 font-medium text-zinc-900">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <p className="flex items-start gap-1.5 font-medium text-warning-ink">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
                       No price entered for: {preview.missingPriceDates.join(", ")}. Those
                       nights priced as 0 — set the final amount manually or fill in the{" "}
                       Price List.
@@ -499,7 +501,7 @@ export function ReservationModal({
                   <span className="text-sm font-medium text-zinc-700">Payments</span>
                   <span className="text-sm text-zinc-500">
                     Due {money(totalDue)} · Paid {money(totalPaid)} ·{" "}
-                    <span className={balanceDue > 0 ? "font-semibold text-zinc-900" : "font-normal text-zinc-500"}>
+                    <span className={balanceDue > 0 ? "font-semibold text-danger-ink" : "font-normal text-zinc-500"}>
                       Balance {money(balanceDue)}
                     </span>
                   </span>
@@ -569,16 +571,17 @@ export function ReservationModal({
                       className="input"
                     />
                   </label>
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
                     onClick={handleAddPayment}
                     disabled={isSavingPayment}
-                    className="btn-secondary disabled:opacity-60"
+                    className="disabled:opacity-60"
                   >
                     {isSavingPayment ? "Saving…" : "+ Add payment"}
-                  </button>
+                  </Button>
                 </div>
-                {paymentError && <p className="text-sm font-medium text-zinc-900">{paymentError}</p>}
+                {paymentError && <p className="error-text">{paymentError}</p>}
               </div>
             ) : (
               <p className="text-sm text-zinc-500">
@@ -587,7 +590,7 @@ export function ReservationModal({
             )}
 
             {error && (
-              <div className="rounded-md border border-zinc-900 bg-white p-3 text-sm font-medium text-zinc-900">
+              <div className="error-box">
                 <p>{error}</p>
                 {conflict && (
                   <p className="mt-1">
@@ -602,18 +605,19 @@ export function ReservationModal({
               <div>
                 {reservationId && status !== "CANCELED" && (
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="danger"
                       onClick={handleCancelReservation}
                       disabled={isCanceling}
-                      className="btn-danger disabled:opacity-60"
+                      className="disabled:opacity-60"
                     >
                       {isCanceling
                         ? "Canceling…"
                         : confirmingCancel
                           ? "Click again to confirm"
                           : "Cancel Reservation"}
-                    </button>
+                    </Button>
                     {confirmingCancel && !isCanceling && (
                       <button
                         type="button"
@@ -627,31 +631,22 @@ export function ReservationModal({
                 )}
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={onClose} className="btn-secondary">
+                <Button type="button" variant="secondary" onClick={onClose}>
                   Close
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="btn-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  className="disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSaving ? "Saving…" : "Save"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium text-zinc-700">{label}</span>
-      {children}
-    </label>
   );
 }
