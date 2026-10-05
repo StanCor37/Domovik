@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { createSession } from "@/lib/session";
 
-export type LoginState = { error: string } | undefined;
+// The email comes back with an error so the form can keep it filled in
+// (React resets a form after its action runs).
+export type LoginState = { error: string; email: string } | undefined;
 
 export async function login(
   _prevState: LoginState,
@@ -15,19 +17,19 @@ export async function login(
   const password = formData.get("password");
 
   if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
-    return { error: "Enter your email and password." };
+    return { error: "Enter your email and password.", email: typeof email === "string" ? email : "" };
   }
 
   const user = await prisma.user.findUnique({
     where: { email: email.trim().toLowerCase() },
   });
   if (!user) {
-    return { error: "Incorrect email or password." };
+    return { error: "Incorrect email or password.", email };
   }
 
   const passwordMatches = await bcrypt.compare(password, user.passwordHash);
   if (!passwordMatches) {
-    return { error: "Incorrect email or password." };
+    return { error: "Incorrect email or password.", email };
   }
 
   await createSession(user.id);

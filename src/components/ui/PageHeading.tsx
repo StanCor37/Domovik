@@ -35,7 +35,7 @@ export function PageHeader({
 }) {
   return (
     <div className={"hero-band" + (className ? " " + className : "")}>
-      <h1 className="text-[30px] leading-none font-normal text-white">{title}</h1>
+      <h1 className="text-[30px] leading-none font-normal text-paper">{title}</h1>
       {subtitle && <p className="mt-2 text-[15px] leading-5 text-[#e3ecf4]">{subtitle}</p>}
     </div>
   );

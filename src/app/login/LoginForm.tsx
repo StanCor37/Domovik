@@ -13,6 +13,8 @@ export function LoginForm() {
         <input
           name="email"
           type="email"
+          defaultValue={state?.email}
+          key={state?.email}
           required
           autoComplete="email"
           className="input"
