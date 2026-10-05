@@ -12,10 +12,12 @@ export function SegmentedLink({
 }: { active: boolean; children: React.ReactNode } & Omit<ComponentProps<typeof Link>, "className">) {
   return (
     <Link
+      data-active={active || undefined}
       className={
-        active
+        "shrink-0 whitespace-nowrap " +
+        (active
           ? "rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white"
-          : "rounded-md border border-zinc-400 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          : "rounded-md border border-zinc-400 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50")
       }
       {...rest}
     >

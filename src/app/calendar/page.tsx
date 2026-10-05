@@ -13,7 +13,7 @@ import {
 import { compareNatural } from "@/lib/sort";
 import { parsePaymentMethods } from "@/lib/paymentMethods";
 import { OCCUPYING_STATUSES, STATUS_BLOCK_CLASSES, type ReservationStatus } from "@/lib/reservations";
-import { Button, PageTitle, SegmentedLink } from "@/components/ui";
+import { Button, PageTitle, ScrollRow, SegmentedLink } from "@/components/ui";
 import { CalendarGrid, type CellInfo, type DayInfo } from "./CalendarGrid";
 
 export const metadata: Metadata = { title: "Calendar" };
@@ -166,13 +166,13 @@ export default async function CalendarPage({
             {year + 1} →
           </Button>
         </div>
-        <div className="flex flex-wrap gap-1">
+        <ScrollRow className="min-w-0 flex-1">
           {seasonMonths.map((m) => (
             <SegmentedLink key={m} href={`?year=${year}&month=${m}`} active={m === month}>
               {MONTH_LABELS[m - 1]}
             </SegmentedLink>
           ))}
-        </div>
+        </ScrollRow>
       </div>
 
       {rooms.length === 0 ? (

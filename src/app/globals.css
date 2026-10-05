@@ -108,4 +108,23 @@ body {
     position: relative;
     z-index: 1;
   }
+
+  /* A single-line scrollable strip (the month picker) — a thin, muted
+     scrollbar instead of the browser default, so it reads as a scroll
+     affordance rather than a full-width UI chrome bar. */
+  .scroll-row {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-zinc-300) transparent;
+    padding-bottom: 4px;
+  }
+  .scroll-row::-webkit-scrollbar {
+    height: 6px;
+  }
+  .scroll-row::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-row::-webkit-scrollbar-thumb {
+    background-color: var(--color-zinc-300);
+    border-radius: 99px;
+  }
 }

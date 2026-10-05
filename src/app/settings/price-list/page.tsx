@@ -8,7 +8,7 @@ import {
   MONTH_LABELS,
   dateToIso,
 } from "@/lib/season";
-import { Button, FormCard, PageTitle, SegmentedLink } from "@/components/ui";
+import { Button, FormCard, PageTitle, ScrollRow, SegmentedLink } from "@/components/ui";
 import { savePriceListMonth } from "./actions";
 import { ImportForm } from "./ImportForm";
 
@@ -140,13 +140,13 @@ export default async function PriceListPage({
             Today
           </Button>
         </div>
-        <div className="flex flex-wrap gap-1">
+        <ScrollRow className="min-w-0 flex-1">
           {seasonMonths.map((m) => (
             <SegmentedLink key={m} href={qs({ month: m })} active={m === month}>
               {MONTH_LABELS[m - 1]}
             </SegmentedLink>
           ))}
-        </div>
+        </ScrollRow>
       </div>
 
       {days.length === 0 ? (
