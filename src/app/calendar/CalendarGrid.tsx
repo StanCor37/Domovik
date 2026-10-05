@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { STATUS_BLOCK_CLASSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
+import { Button } from "@/components/ui";
 import { ReservationModal, type ModalTarget, type PackageOption, type RoomOption } from "../reservations/ReservationModal";
 
 export type DayInfo = {
@@ -71,19 +71,18 @@ export function CalendarGrid({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex gap-2">
-        <button
+        <Button
           type="button"
           onClick={() => {
             const firstAvailable = rooms.find((r) => r.availableForReservation) ?? rooms[0];
             if (firstAvailable && days[0]) openCreate(firstAvailable.id, days[0].iso);
           }}
-          className="btn-primary"
         >
           + New Reservation
-        </button>
-        <Link href={todayHref} className="btn-secondary">
+        </Button>
+        <Button href={todayHref} variant="secondary">
           Today
-        </Link>
+        </Button>
       </div>
 
       <div className="max-h-[70vh] overflow-auto rounded-lg border border-zinc-200 bg-white">
@@ -131,7 +130,7 @@ export function CalendarGrid({
                         key={day.iso}
                         className={
                           "h-8 min-w-9 cursor-pointer border-b border-zinc-100 hover:bg-zinc-50 " +
-                          (day.isToday ? "bg-accent/10" : "") +
+                          (day.isToday ? "bg-gradient-to-b from-accent/12 to-accent/3" : "") +
                           " " +
                           borderL
                         }
@@ -147,6 +146,7 @@ export function CalendarGrid({
                         "h-8 min-w-9 cursor-pointer border-b border-zinc-100 " +
                         (cell.isStart ? "pl-1" : "") +
                         (cell.isEnd ? " pr-1" : "") +
+                        (day.isToday ? " ring-1 ring-inset ring-accent/25" : "") +
                         " " +
                         borderL
                       }
@@ -159,8 +159,8 @@ export function CalendarGrid({
                         className={
                           "h-6 truncate text-center text-[10px] leading-6 " +
                           STATUS_BLOCK_CLASSES[cell.status] +
-                          (cell.isStart ? " rounded-l" : "") +
-                          (cell.isEnd ? " rounded-r" : "")
+                          (cell.isStart ? " rounded-l-lg" : "") +
+                          (cell.isEnd ? " rounded-r-lg" : "")
                         }
                       >
                         {cell.showLabel ? cell.guestName : ""}

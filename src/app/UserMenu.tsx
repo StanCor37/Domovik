@@ -1,4 +1,5 @@
 import { getCurrentUser } from "@/lib/dal";
+import { Button } from "@/components/ui";
 import { logout } from "./login/logout-action";
 
 export async function UserMenu() {
@@ -9,9 +10,9 @@ export async function UserMenu() {
     <div className="ml-auto flex items-center gap-3 text-sm">
       <span className="text-zinc-500">{user.name}</span>
       <form action={logout}>
-        <button type="submit" className="btn-secondary">
+        <Button type="submit" variant="secondary">
           Log out
-        </button>
+        </Button>
       </form>
     </div>
   );

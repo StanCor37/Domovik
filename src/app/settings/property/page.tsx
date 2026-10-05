@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { Button, Field, FormCard, PageTitle } from "@/components/ui";
 import { updateProperty } from "../actions";
 
 export const metadata: Metadata = { title: "Property" };
@@ -11,17 +12,12 @@ export default async function PropertySettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Property</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Season dates are recurring (month-day only) — they apply every year.
-        </p>
-      </div>
+      <PageTitle
+        title="Property"
+        description="Season dates are recurring (month-day only) — they apply every year."
+      />
 
-      <form
-        action={updateProperty}
-        className="flex max-w-lg flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6"
-      >
+      <FormCard action={updateProperty} maxWidth="max-w-lg">
         <Field label="Name">
           <input
             name="name"
@@ -77,25 +73,10 @@ export default async function PropertySettingsPage() {
             />
           </Field>
         </div>
-        <button type="submit" className="btn-primary self-start">
+        <Button type="submit" className="self-start">
           Save
-        </button>
-      </form>
+        </Button>
+      </FormCard>
     </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      <span className="font-medium text-zinc-700">{label}</span>
-      {children}
-    </label>
   );
 }

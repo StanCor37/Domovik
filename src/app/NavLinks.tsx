@@ -25,7 +25,7 @@ export function NavLinks() {
             className={
               "border-b-2 pb-0.5 text-sm " +
               (isActive
-                ? "border-accent font-medium text-zinc-950"
+                ? "border-primary font-medium text-zinc-950"
                 : "border-transparent text-zinc-500 hover:text-zinc-950")
             }
           >
