@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Button, EmptyRow, Field, FormCard, PageTitle, Table, TableWrap, Td, THead, Th, Tr } from "@/components/ui";
 import {
@@ -10,10 +11,19 @@ import {
 export const metadata: Metadata = { title: "Season & Smena" };
 
 export default async function SmenaSettingsPage() {
-  const [settings, periods] = await Promise.all([
+  const [settings, periods, property] = await Promise.all([
     prisma.settings.findUnique({ where: { id: "singleton" } }),
     prisma.smenaPeriod.findMany({ orderBy: { startMonthDay: "asc" } }),
+    prisma.property.findUnique({ where: { id: "singleton-property" } }),
   ]);
+
+  // The season (Property settings) bounds the calendar and price list, so a
+  // smena running outside it silently won't appear there — flag it. MM-DD
+  // strings compare correctly as plain strings.
+  const isOutsideSeason = (period: { startMonthDay: string; endMonthDay: string }) =>
+    property !== null &&
+    (period.startMonthDay < property.seasonStartMonthDay || period.endMonthDay > property.seasonEndMonthDay);
+  const outside = periods.filter(isOutsideSeason);
 
   return (
     <div className="flex flex-col gap-6">
@@ -21,6 +31,18 @@ export default async function SmenaSettingsPage() {
         title="Season & Smena"
         description="The smena is a recurring pattern, not a rigid calendar container — the calendar itself stays day-based."
       />
+
+      {property && outside.length > 0 && (
+        <p role="alert" className="rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {outside.map((p) => p.label).join(", ")} {outside.length === 1 ? "falls" : "fall"} outside the season
+          ({property.seasonStartMonthDay} to {property.seasonEndMonthDay}), so {outside.length === 1 ? "it" : "they"}{" "}
+          won&apos;t show on the calendar or accept prices.{" "}
+          <Link href="/settings/property" className="font-medium underline">
+            Adjust the season
+          </Link>
+          .
+        </p>
+      )}
 
       <FormCard title="Default smena length" action={updateSmenaLength} maxWidth="max-w-sm">
         <Field label="Nights">
@@ -49,7 +71,12 @@ export default async function SmenaSettingsPage() {
           <tbody>
             {periods.map((period) => (
               <Tr key={period.id}>
-                <Td className="font-medium">{period.label}</Td>
+                <Td className="font-medium">
+                  {period.label}
+                  {isOutsideSeason(period) && (
+                    <span className="ml-2 text-xs font-normal text-amber-700">outside season</span>
+                  )}
+                </Td>
                 <Td className="text-zinc-500">{period.startMonthDay}</Td>
                 <Td className="text-zinc-500">{period.endMonthDay}</Td>
                 <Td>
