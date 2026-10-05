@@ -384,6 +384,20 @@ export async function moveReservationToRoom(
   }
 }
 
+// Permanently removes a reservation with its guests and payments (calendar
+// bin action, confirmed first). Cancel keeps the record; this does not.
+export async function deleteReservation(
+  id: string
+): Promise<{ ok: true; reservationNumber: string } | { ok: false; error: string }> {
+  try {
+    const reservation = await prisma.reservation.delete({ where: { id } });
+    revalidatePath("/calendar");
+    return { ok: true, reservationNumber: reservation.reservationNumber };
+  } catch {
+    return { ok: false, error: "The reservation could not be deleted. Reload the page and try again." };
+  }
+}
+
 // Cancellation never deletes the reservation — only changes status. The
 // room frees up immediately since CANCELED is not an occupying status.
 export async function cancelReservation(id: string): Promise<SaveReservationResult> {

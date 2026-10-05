@@ -20,7 +20,7 @@ import {
   type ReservationStatus,
 } from "@/lib/reservations";
 import { Button, PageTitle } from "@/components/ui";
-import { CalendarGrid, type CellInfo, type DayInfo, type MonthInfo } from "./CalendarGrid";
+import { CalendarGrid, type CellInfo, type DayInfo, type MonthInfo, type ReservationSummary } from "./CalendarGrid";
 
 export const metadata: Metadata = { title: "Calendar" };
 
@@ -105,6 +105,7 @@ export default async function CalendarPage({
 
   let reservations: {
     id: string;
+    reservationNumber: string;
     roomId: string;
     guestName: string;
     checkIn: Date;
@@ -113,6 +114,7 @@ export default async function CalendarPage({
     finalAmount: number;
     taxAmount: number;
     payments: { amount: number }[];
+    guests: { taxCategory: string }[];
   }[] = [];
 
   if (monthDays.length > 0 && sortedRooms.length > 0) {
@@ -125,12 +127,32 @@ export default async function CalendarPage({
         checkIn: { lt: rangeEnd },
         checkOut: { gt: rangeStart },
       },
-      include: { payments: { select: { amount: true } } },
+      include: { payments: { select: { amount: true } }, guests: { select: { taxCategory: true } } },
     });
   }
 
   const cells: Record<string, CellInfo> = {};
+  // What the bar label and hover card show for each stay.
+  const summaries: Record<string, ReservationSummary> = {};
   for (const r of reservations) {
+    const paid = r.payments.reduce((sum, p) => sum + p.amount, 0);
+    // Adults vs children by tax category, which is age-based (the price
+    // category is just what the family asked for).
+    const adults = r.guests.filter((g) => g.taxCategory === "ADULT").length;
+    summaries[r.id] = {
+      reservationNumber: r.reservationNumber,
+      guestName: r.guestName,
+      status: r.status as ReservationStatus,
+      checkIn: dateToIso(r.checkIn),
+      checkOut: dateToIso(r.checkOut),
+      nights: Math.round((r.checkOut.getTime() - r.checkIn.getTime()) / 86400000),
+      adults,
+      children: r.guests.length - adults,
+      totalDue: r.finalAmount + r.taxAmount,
+      paid,
+      paymentCount: r.payments.length,
+    };
+
     // Isos this reservation occupies within the season, in order —
     // a contiguous run since a room can't have two overlapping reservations.
     const runIsos: string[] = [];
@@ -149,10 +171,7 @@ export default async function CalendarPage({
     const checkInIso = dateToIso(r.checkIn);
     const lastNightIso = dateToIso(new Date(r.checkOut.getTime() - 86400000));
     // Paid vs. the total due (final amount + tourist tax), as in the ledger.
-    const paymentState = paymentStateOf(
-      r.payments.reduce((sum, p) => sum + p.amount, 0),
-      r.finalAmount + r.taxAmount
-    );
+    const paymentState = paymentStateOf(paid, r.finalAmount + r.taxAmount);
 
     for (const iso of runIsos) {
       cells[`${r.roomId}|${iso}`] = {
@@ -211,6 +230,7 @@ export default async function CalendarPage({
           months={months}
           initialMonth={months.some((m) => m.month === month) ? month : months[0].month}
           cells={cells}
+          summaries={summaries}
           packages={packages}
           paymentMethods={paymentMethods}
           currency={property.currency}

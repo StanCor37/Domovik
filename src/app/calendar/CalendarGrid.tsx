@@ -8,9 +8,10 @@ import {
   type PaymentState,
   type ReservationStatus,
 } from "@/lib/reservations";
-import { Button, ScrollRow, SegmentedButton } from "@/components/ui";
+import { Button, Icon, ScrollRow, SegmentedButton, StatusTag, type IconName } from "@/components/ui";
+import { formatCurrency } from "@/lib/currency";
 import { ReservationModal, type ModalTarget, type PackageOption, type RoomOption } from "../reservations/ReservationModal";
-import { moveReservationToRoom } from "../reservations/actions";
+import { deleteReservation, moveReservationToRoom } from "../reservations/actions";
 
 export type DayInfo = {
   iso: string;
@@ -19,6 +20,21 @@ export type DayInfo = {
   month: number;
   isToday: boolean;
   smenaLabel?: string;
+};
+
+/** Per stay: what the bar label and the hover card show. */
+export type ReservationSummary = {
+  reservationNumber: string;
+  guestName: string;
+  status: ReservationStatus;
+  checkIn: string; // ISO date
+  checkOut: string; // ISO date
+  nights: number;
+  adults: number;
+  children: number;
+  totalDue: number; // final amount + tourist tax
+  paid: number;
+  paymentCount: number;
 };
 
 export type MonthInfo = {
@@ -56,7 +72,13 @@ type Move = { reservationId: string; toRoomId: string };
 
 type Notice =
   | { kind: "moved"; text: string; undo: Move }
+  | { kind: "info"; text: string }
   | { kind: "error"; text: string };
+
+// Hover card: anchored under (or above, near the bottom of the window) the
+// day piece the pointer entered first; width in px for edge clamping.
+const HOVER_CARD_WIDTH = 330;
+type Hover = { id: string; left: number; top: number; above: boolean };
 
 /** Every reservation's room and in-season nights, rebuilt from the cell map. */
 function spansOf(cells: Record<string, CellInfo>) {
@@ -92,6 +114,7 @@ export function CalendarGrid({
   months,
   initialMonth,
   cells,
+  summaries,
   packages,
   paymentMethods,
   currency,
@@ -101,12 +124,45 @@ export function CalendarGrid({
   months: MonthInfo[];
   initialMonth: number;
   cells: Record<string, CellInfo>;
+  summaries: Record<string, ReservationSummary>;
   packages: PackageOption[];
   paymentMethods: string[];
   currency: string;
 }) {
   const [target, setTarget] = useState<ModalTarget | null>(null);
   const router = useRouter();
+
+  // Hover card with the stay's details and view / edit / delete actions.
+  // Opens on entering a bar, survives the short trip from the bar into the
+  // card, and closes when the pointer leaves both, on scroll or on drag.
+  const [hover, setHover] = useState<Hover | null>(null);
+  const hoverCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  function cancelHoverClose() {
+    if (hoverCloseTimer.current) clearTimeout(hoverCloseTimer.current);
+    hoverCloseTimer.current = null;
+  }
+  function scheduleHoverClose() {
+    cancelHoverClose();
+    hoverCloseTimer.current = setTimeout(() => setHover(null), 150);
+  }
+  function openHover(id: string, el: HTMLElement) {
+    cancelHoverClose();
+    if (hover?.id === id) return; // moving along the same bar: stay put
+    const rect = el.getBoundingClientRect();
+    const above = rect.bottom + 280 > window.innerHeight;
+    setHover({
+      id,
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - HOVER_CARD_WIDTH - 8)),
+      top: above ? rect.top - 6 : rect.bottom + 6,
+      above,
+    });
+  }
+  function openFromHover(mode: "view" | "edit", reservationId: string) {
+    setHover(null);
+    setTarget({ mode, reservationId });
+  }
 
   // Drag and drop between rooms: the bar moves at once (optimistically) and
   // the server confirms; on failure the optimistic state simply falls away.
@@ -274,6 +330,21 @@ export function CalendarGrid({
     });
   }
 
+  function removeReservation(reservationId: string) {
+    const summary = summaries[reservationId];
+    setConfirmDelete(null);
+    setNotice(null);
+    startMoving(async () => {
+      const result = await deleteReservation(reservationId);
+      if (!result.ok) {
+        setNotice({ kind: "error", text: result.error });
+        return;
+      }
+      router.refresh();
+      setNotice({ kind: "info", text: `Deleted ${summary?.guestName ?? "the reservation"} (${result.reservationNumber}).` });
+    });
+  }
+
   function endDrag() {
     setDragging(null);
     setDropRoomId(null);
@@ -365,6 +436,7 @@ export function CalendarGrid({
       <div
         ref={scrollRef}
         onScroll={(e) => {
+          if (hover) setHover(null);
           updateActiveMonth(e.currentTarget);
           extendIfNearEdge(e.currentTarget);
         }}
@@ -519,29 +591,43 @@ export function CalendarGrid({
                             e.dataTransfer.effectAllowed = "move";
                             e.dataTransfer.setData("text/plain", cell.reservationId);
                             setNotice(null);
+                            setHover(null);
                             setDragging(cell.reservationId);
                           }}
                           onDragEnd={endDrag}
-                          title={`${cell.guestName} — ${calendarStatusLabel(cell.status, cell.paymentState)} (drag to another room to move)`}
+                          onMouseEnter={(e) => {
+                            if (!dragging) openHover(cell.reservationId, e.currentTarget);
+                          }}
+                          onMouseLeave={scheduleHoverClose}
+                          aria-label={`${cell.guestName}, ${calendarStatusLabel(cell.status, cell.paymentState)}`}
                           className={
+                            // Squared-off bars with just a slight round on the
+                            // stay's real check-in and check-out ends.
                             "relative h-6 cursor-grab text-center text-[10px] leading-6 active:cursor-grabbing " +
                             (dragging === cell.reservationId ? "opacity-40 " : "") +
                             calendarBlockClasses(cell.status, cell.paymentState) +
-                            (cell.isStart ? " rounded-l-lg" : "") +
+                            (cell.isStart ? " rounded-l-[3px]" : "") +
                             // Each day's piece reaches 1px under the next day's,
                             // so at fractional display scaling (e.g. 150%) the
                             // anti-aliased cell edges can't show as seams.
-                            (cell.isEnd ? " rounded-r-lg" : " -mr-px")
+                            (cell.isEnd ? " rounded-r-[3px]" : " -mr-px")
                           }
                         >
-                          {/* Raised above the bar's later day pieces, and click-through
-                              so dragging/clicking still hits the bar underneath. */}
+                          {/* Name in capitals for quick reading, then the number of
+                              guests; the name gives way ("…") before the count.
+                              Raised above the bar's later day pieces, and click-
+                              through so dragging/clicking still hits the bar. */}
                           {labelWidth > 0 && (
                             <span
-                              className="pointer-events-none absolute inset-y-0 left-0 z-[5] truncate px-1.5"
+                              className="pointer-events-none absolute inset-y-0 left-0 z-[5] flex items-center justify-center gap-1 px-1.5 tracking-[0.02em] uppercase"
                               style={{ width: labelWidth }}
                             >
-                              {cell.guestName}
+                              <span className="min-w-0 truncate">{cell.guestName}</span>
+                              {summaries[cell.reservationId] && (
+                                <span className="shrink-0 opacity-85">
+                                  · {summaries[cell.reservationId].adults + summaries[cell.reservationId].children}
+                                </span>
+                              )}
                             </span>
                           )}
                         </div>
@@ -553,6 +639,36 @@ export function CalendarGrid({
           </tbody>
         </table>
       </div>
+
+      {hover && !dragging && !target && summaries[hover.id] && (
+        <ReservationHoverCard
+          summary={summaries[hover.id]}
+          currency={currency}
+          style={{
+            left: hover.left,
+            top: hover.top,
+            width: HOVER_CARD_WIDTH,
+            transform: hover.above ? "translateY(-100%)" : undefined,
+          }}
+          onMouseEnter={cancelHoverClose}
+          onMouseLeave={scheduleHoverClose}
+          onView={() => openFromHover("view", hover.id)}
+          onEdit={() => openFromHover("edit", hover.id)}
+          onDelete={() => {
+            setConfirmDelete(hover.id);
+            setHover(null);
+          }}
+        />
+      )}
+
+      {confirmDelete && summaries[confirmDelete] && (
+        <ConfirmDeleteModal
+          summary={summaries[confirmDelete]}
+          currency={currency}
+          onCancel={() => setConfirmDelete(null)}
+          onConfirm={() => removeReservation(confirmDelete)}
+        />
+      )}
 
       {confirmMove && (
         <ConfirmMoveModal
@@ -657,6 +773,184 @@ function ConfirmMoveModal({
           <Button type="button" onClick={onConfirm} autoFocus>
             Change room
           </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const SHORT_DATE = new Intl.DateTimeFormat("en-GB", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  timeZone: "UTC",
+});
+
+function shortDate(iso: string) {
+  return SHORT_DATE.format(new Date(`${iso}T00:00:00.000Z`));
+}
+
+function plural(n: number, one: string, many: string) {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
+/** The stay at a glance: dates, guests split into adults and children, the
+ * full price (stay + tourist tax) against what's been paid, and actions. */
+function ReservationHoverCard({
+  summary,
+  currency,
+  style,
+  onMouseEnter,
+  onMouseLeave,
+  onView,
+  onEdit,
+  onDelete,
+}: {
+  summary: ReservationSummary;
+  currency: string;
+  style: React.CSSProperties;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const balance = summary.totalDue - summary.paid;
+  const money = (n: number) => formatCurrency(n, currency);
+
+  return (
+    <div
+      role="dialog"
+      aria-label={`${summary.guestName}, ${summary.reservationNumber}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={style}
+      className="fixed z-[180] rounded-lg border-[1.5px] border-zinc-200 bg-white p-4 text-[14px] leading-5"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="truncate text-[16px] leading-5 font-bold tracking-[0.02em] text-zinc-900 uppercase">
+            {summary.guestName}
+          </p>
+          <p className="font-mono text-[13px] text-zinc-500">{summary.reservationNumber}</p>
+        </div>
+        <StatusTag status={summary.status} />
+      </div>
+
+      <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
+        <dt className="text-label self-center text-zinc-500">Stay</dt>
+        <dd>
+          {shortDate(summary.checkIn)} → {shortDate(summary.checkOut)}
+          <span className="text-zinc-500"> · {plural(summary.nights, "night", "nights")}</span>
+        </dd>
+        <dt className="text-label self-center text-zinc-500">Guests</dt>
+        <dd>
+          {plural(summary.adults, "adult", "adults")}
+          {summary.children > 0 && ` · ${plural(summary.children, "child", "children")}`}
+        </dd>
+        <dt className="text-label self-center text-zinc-500">Full price</dt>
+        <dd className="font-mono">{money(summary.totalDue)}</dd>
+        <dt className="text-label self-center text-zinc-500">Paid</dt>
+        <dd className="font-mono">
+          {money(summary.paid)}
+          {balance > 0.005 && <span className="text-danger-ink"> · {money(balance)} due</span>}
+          {balance < -0.005 && <span className="text-warning-ink"> · {money(-balance)} overpaid</span>}
+        </dd>
+      </dl>
+
+      <div className="mt-3 flex justify-end gap-1 border-t-[1.5px] border-zinc-200 pt-3">
+        <HoverAction icon="eye" label="View" onClick={onView} />
+        <HoverAction icon="pen" label="Edit" onClick={onEdit} />
+        <HoverAction icon="trash" label="Delete" onClick={onDelete} danger />
+      </div>
+    </div>
+  );
+}
+
+function HoverAction({
+  icon,
+  label,
+  onClick,
+  danger,
+}: {
+  icon: IconName;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={
+        "grid h-8 w-8 place-items-center rounded-full border-[1.5px] border-transparent text-zinc-500 transition-colors hover:border-zinc-200 " +
+        (danger ? "hover:bg-danger-wash hover:text-danger-ink" : "hover:bg-zinc-50 hover:text-zinc-900")
+      }
+    >
+      <Icon name={icon} size={15} />
+    </button>
+  );
+}
+
+/** Permanent delete, confirmed: names the stay and warns when payments go
+ * with it (Cancel would keep the record). */
+function ConfirmDeleteModal({
+  summary,
+  currency,
+  onCancel,
+  onConfirm,
+}: {
+  summary: ReservationSummary;
+  currency: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-deep-tide/50 p-4" onClick={onCancel}>
+      <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirm-delete-title"
+        className="relative z-[300] w-full max-w-md rounded-lg border-[1.5px] border-zinc-200 bg-white p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="confirm-delete-title" className="title-section mb-3">
+          Delete this reservation?
+        </h2>
+        <p className="text-[15px] leading-5">
+          <span className="font-bold uppercase">{summary.guestName}</span> ({summary.reservationNumber}),{" "}
+          {shortDate(summary.checkIn)} → {shortDate(summary.checkOut)}, is removed for good.
+        </p>
+        {summary.paymentCount > 0 && (
+          <p className="mt-2 text-[15px] leading-5 text-danger-ink">
+            Its {plural(summary.paymentCount, "payment", "payments")} ({formatCurrency(summary.paid, currency)}) will be
+            deleted too.
+          </p>
+        )}
+        <p className="mt-2 text-[14px] leading-5 text-zinc-500">
+          To keep the record, open the reservation and cancel it instead.
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onCancel} autoFocus>
+            Keep
+          </Button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="text-label inline-flex h-9 items-center rounded-full border-[1.5px] border-danger bg-danger px-5 font-bold text-white hover:brightness-95"
+          >
+            Delete reservation
+          </button>
         </div>
       </div>
     </div>

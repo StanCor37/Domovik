@@ -37,7 +37,9 @@ export type PackageOption = { code: string; label: string };
 
 export type ModalTarget =
   | { mode: "create"; roomId: string; checkIn: string; checkOut: string }
-  | { mode: "edit"; reservationId: string };
+  | { mode: "edit"; reservationId: string }
+  // Read-only look at a saved reservation; "Edit" in the footer unlocks it.
+  | { mode: "view"; reservationId: string };
 
 function newGuest(priceCategory: PriceCategory = "ADULT", taxCategory: TaxCategory = "ADULT"): GuestInput {
   return { priceCategory, taxCategory };
@@ -60,8 +62,9 @@ export function ReservationModal({
 }) {
   const router = useRouter();
   const money = (amount: number) => formatCurrency(amount, currency);
-  const [loading, setLoading] = useState(target.mode === "edit");
-  const reservationId = target.mode === "edit" ? target.reservationId : null;
+  const [loading, setLoading] = useState(target.mode !== "create");
+  const reservationId = target.mode !== "create" ? target.reservationId : null;
+  const [readOnly, setReadOnly] = useState(target.mode === "view");
   const [reservationNumber, setReservationNumber] = useState<string | null>(null);
 
   const [roomId, setRoomId] = useState(target.mode === "create" ? target.roomId : "");
@@ -117,7 +120,7 @@ export function ReservationModal({
   }
 
   useEffect(() => {
-    if (target.mode !== "edit") return;
+    if (target.mode === "create") return;
     let cancelled = false;
     getReservation(target.reservationId).then((r) => {
       if (cancelled || !r) return;
@@ -234,7 +237,7 @@ export function ReservationModal({
 
     startSaving(async () => {
       const result =
-        target.mode === "edit" && reservationId
+        reservationId
           ? await updateReservation(reservationId, input)
           : await createReservation(input);
 
@@ -306,7 +309,7 @@ export function ReservationModal({
 
   const autoStatus = statusForPayments("PREBOOKED", payments.length);
   const isLeavingEarly =
-    target.mode === "edit" && status === "PARTIALLY_CANCELED" && savedStatus !== "PARTIALLY_CANCELED";
+    reservationId !== null && status === "PARTIALLY_CANCELED" && savedStatus !== "PARTIALLY_CANCELED";
   // The guest can leave on any day after check-in, up to the night before
   // the booked check-out.
   const leaveMin = checkIn ? addDaysIso(checkIn, 1) : undefined;
@@ -330,7 +333,7 @@ export function ReservationModal({
   const balanceDue = totalDue - totalPaid;
 
   const roomOptions =
-    target.mode === "edit" && roomId && !rooms.some((r) => r.id === roomId)
+    reservationId && roomId && !rooms.some((r) => r.id === roomId)
       ? rooms
       : rooms.filter((r) => r.availableForReservation || r.id === roomId);
 
@@ -345,7 +348,7 @@ export function ReservationModal({
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="title-section">
-            {target.mode === "edit" ? "Edit reservation" : "New reservation"}
+            {readOnly ? "Reservation" : reservationId ? "Edit reservation" : "New reservation"}
             {reservationNumber && (
               <span className="ml-2 text-sm font-normal text-zinc-500">
                 {reservationNumber}
@@ -361,6 +364,8 @@ export function ReservationModal({
           <p className="text-sm text-zinc-500">Loading…</p>
         ) : (
           <div className="flex flex-col gap-4">
+            {/* In view mode every field, guest and payment control is locked. */}
+            <fieldset disabled={readOnly} className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0">
             <div className="grid grid-cols-2 gap-4">
               <Field label="Room">
                 <select
@@ -728,9 +733,11 @@ export function ReservationModal({
               </div>
             )}
 
+            </fieldset>
+
             <div className="flex items-center justify-between gap-2 pt-2">
               <div>
-                {reservationId && status !== "CANCELED" && (
+                {reservationId && !readOnly && status !== "CANCELED" && (
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
@@ -761,14 +768,20 @@ export function ReservationModal({
                 <Button type="button" variant="secondary" onClick={onClose}>
                   Close
                 </Button>
-                <Button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSaving ? "Saving…" : "Save"}
-                </Button>
+                {readOnly ? (
+                  <Button type="button" onClick={() => setReadOnly(false)}>
+                    Edit
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSaving ? "Saving…" : "Save"}
+                  </Button>
+                )}
               </div>
             </div>
           </div>

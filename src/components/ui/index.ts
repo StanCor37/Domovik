@@ -8,3 +8,4 @@ export { StatCard } from "./StatCard";
 export { SegmentedLink, SegmentedButton } from "./SegmentedLink";
 export { ScrollRow } from "./ScrollRow";
 export { Avatar } from "./Avatar";
+export { Icon, type IconName } from "./Icon";
