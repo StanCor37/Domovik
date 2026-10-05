@@ -1,117 +1,328 @@
 @import "tailwindcss";
 
 /*
- * Domovik design system — Ateneo Blue / Miami Coral palette, Inter
- * throughout. Ported from the "Domovik Design System" artifact (Foundations,
- * Components, Dashboard, Calendar and Ledger boards) — see those boards for
- * the full rationale and swatches.
+ * Domovik on the MedConnect Design System MASTER (MedConnect / PartnerHub
+ * house style, deck spec v12, Sept 2026). The MASTER is authored for a
+ * 1920×1080 slide where 1pt = 2px; app sizes here are the pt values ≈ px.
  *
- * The Tailwind `zinc` scale is remapped here (not left at its default gray)
- * so every existing `bg-zinc-*` / `text-zinc-*` / `border-zinc-*` utility
- * already used across the app repaints in the new palette without touching
- * each page. `--color-primary` (Ateneo Blue) and `--color-accent` (Miami
- * Coral, small doses only — dots, active nav underline, today marker) carry
- * the brand. Success/warning/danger are a separate semantic set for status
- * and KPI color (dashboard tiles, payment status, occupancy) — each has a
- * paler `-wash` background, a `-border` for its wash, and (for warning/
- * danger, whose base hue is too light/saturated to read as text) a darker
- * `-ink` variant for text sitting on that wash.
+ * - Calm, light, premium: white canvas, warm cards (#F4F3EF) with a warm
+ *   hairline (#E4E2DC), 13px corners, NO shadows (depth from fill contrast).
+ * - Ink #141414 text, mute #6B6B6B secondary, faint #8A8A8A footnotes.
+ * - Blue #2E5F8E for tags, primary actions and the main data colour; the
+ *   one gradient is the blue panel (#1F4E7A → #4F86B0 + a soft top-left
+ *   highlight), used for page header bands.
+ * - Coral #E0776F once per screen, only as a dot, pill or single figure
+ *   (here: the today marker).
+ * - Carlito (Calibri metrics) for headings and body, headlines regular
+ *   weight; Arial UPPERCASE with 0.5px tracking for labels, tags, buttons.
+ * - Status green/red/amber are semantic only (payment, statuses).
  *
- * Dark mode is intentionally not wired yet: a few components reuse zinc-900
- * as both "dark fill" and "dark text" (e.g. the solid Booked calendar
- * badge), which don't invert safely under one blanket rule — that needs a
- * real per-component pass, not a token flip.
+ * The Tailwind `zinc` scale is remapped onto the warm neutrals, so every
+ * `bg-zinc-*` / `text-zinc-*` / `border-zinc-*` utility repaints:
+ *   zinc-50  warm fill (table headers, wells, hover)   zinc-200 warm line
+ *   zinc-300 input borders   zinc-500 mute   zinc-900 ink
+ * The MASTER defines no dark mode; the dark theme below is derived from its
+ * navy (#0B1A28) and blues.
  */
 @theme inline {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains-mono);
+  --font-sans: var(--font-carlito), "Segoe UI", system-ui, sans-serif;
+  /* Labels, tags, buttons: Arial, falling back to the bundled Arimo. */
+  --font-label: Arial, var(--font-arimo), "Helvetica Neue", Helvetica, sans-serif;
+  /* No monospace in the system: figures use Carlito with tabular digits
+     (see .font-mono below). */
+  --font-mono: var(--font-carlito), "Segoe UI", system-ui, sans-serif;
+}
 
-  --color-primary: #003a6c;
-  --color-primary-hover: #002848;
-  --color-accent: #fd8973;
+/* Colours are live CSS variables (not inlined) so the dark theme below can
+   redefine them; every utility (bg-primary, text-zinc-500, ...) follows. */
+@theme {
+  /* Brand */
+  --color-primary: #2e5f8e; /* MedConnect blue */
+  --color-primary-hover: #1f4e7a; /* blue-1 */
+  --color-primary-soft: #e3ecf4; /* on-blue-softer: selected, info fills */
+  --color-on-primary: #ffffff;
+  --color-canvas: #ffffff; /* slides are plain white */
+  --color-card: #f4f3ef; /* warm card fill */
+  --color-paper: #ffffff; /* constant: text on the blue panel */
+  --color-deep-tide: #0b1a28; /* constant: navy, dialog scrim */
+  --color-accent: #e0776f; /* coral: once per screen */
+  --color-accent-ink: #c4554d;
+  --color-accent-wash: #fbe7e4;
+  --color-lime: #e6f36b; /* highlight, sparingly, ink text only */
+  /* Calendar: Booked bars and the heavy smena-start rule. */
+  --color-booked: #2e5f8e;
+  --color-on-booked: #ffffff;
+  --color-rule-strong: #141414;
 
-  --color-success: #1e8e5a;
+  /* Status (semantic only) */
+  --color-success: #2e9e6b;
+  --color-success-ink: #23805a;
   --color-success-wash: #e3f3ea;
-  --color-success-border: #bfe2cc;
+  --color-success-border: #bfe2cf;
 
-  --color-warning: #ffbf65;
-  --color-warning-ink: #8a5a12;
-  --color-warning-wash: #fff3de;
-  --color-warning-border: #ffe0a8;
+  --color-warning: #e0a030;
+  --color-warning-ink: #96660f;
+  --color-warning-wash: #fbf0dc;
+  --color-warning-border: #f0d7a6;
 
-  --color-danger: #fd8973;
-  --color-danger-ink: #b5432a;
-  --color-danger-wash: #ffe8e2;
-  --color-danger-border: #fec9bc;
+  --color-danger: #d9534f;
+  --color-danger-ink: #b23a36;
+  --color-danger-wash: #fbe5e4;
+  --color-danger-border: #f2c2c0;
 
-  --color-info-wash: #e3ecf2;
-  --color-info-border: #c3d7e3;
+  --color-info-wash: #e3ecf4;
+  --color-info-border: #c8d8e6;
 
-  --color-zinc-50: #f0eeeb;
-  --color-zinc-100: #e9e6e1;
-  --color-zinc-200: #ccd5da;
-  --color-zinc-300: #b7c2c9;
-  --color-zinc-400: #9facb5;
-  --color-zinc-500: #5b6b75;
-  --color-zinc-700: #003a6c;
-  --color-zinc-900: #13181b;
+  /* Neutrals (warm) */
+  --color-white: #ffffff;
+  --color-zinc-50: #f4f3ef;
+  --color-zinc-100: #eeede8;
+  --color-zinc-200: #e4e2dc;
+  --color-zinc-300: #d3d0c8;
+  --color-zinc-400: #8a8a8a; /* faint: footnotes */
+  --color-zinc-500: #6b6b6b; /* mute */
+  --color-zinc-700: #3a3a3a;
+  --color-zinc-900: #141414; /* ink */
   --color-zinc-950: #000000;
+
+  /* Corners: cards 13px (0.18in), inputs 8px; pills are fully rounded. */
+  --radius-sm: 8px;
+  --radius-md: 8px;
+  --radius-lg: 13px;
+  --radius-xl: 13px;
+}
+
+/*
+ * Dark theme, derived from the MASTER's navy and blues (it defines none):
+ * navy canvas, cards rising lighter, the blue lightened for contrast.
+ * Chosen per browser on the Profile page: data-theme "dark"/"light" on
+ * <html>, or no attribute to follow the OS setting.
+ */
+:root[data-theme="dark"] {
+  --color-primary: #8fb3d6;
+  --color-primary-hover: #b3cce4;
+  --color-primary-soft: #1d3550;
+  --color-on-primary: #0b1a28;
+  --color-canvas: #0b1a28;
+  --color-card: #12263a;
+  --color-booked: #4f86b0;
+  --color-on-booked: #ffffff;
+  --color-rule-strong: #6b7f92;
+  --color-accent-ink: #ef9a93;
+  --color-accent-wash: #3a2224;
+
+  --color-success: #5cc495;
+  --color-success-ink: #5cc495;
+  --color-success-wash: #143528;
+  --color-success-border: #24563f;
+  --color-warning: #e8b45a;
+  --color-warning-ink: #e8b45a;
+  --color-warning-wash: #33280f;
+  --color-warning-border: #5a4415;
+  --color-danger: #ef8a86;
+  --color-danger-ink: #ef8a86;
+  --color-danger-wash: #3a1f22;
+  --color-danger-border: #5e2f31;
+  --color-info-wash: #1d3550;
+  --color-info-border: #2e4b6b;
+
+  --color-white: #0f2135;
+  --color-zinc-50: #12263a;
+  --color-zinc-100: #1a3047;
+  --color-zinc-200: #223a52;
+  --color-zinc-300: #2f4a66;
+  --color-zinc-400: #7d8fa1;
+  --color-zinc-500: #a9b4bf;
+  --color-zinc-700: #d3dbe2;
+  --color-zinc-900: #f4f3ef;
+  --color-zinc-950: #ffffff;
+
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-primary: #8fb3d6;
+    --color-primary-hover: #b3cce4;
+    --color-primary-soft: #1d3550;
+    --color-on-primary: #0b1a28;
+    --color-canvas: #0b1a28;
+    --color-card: #12263a;
+    --color-booked: #4f86b0;
+    --color-on-booked: #ffffff;
+    --color-rule-strong: #6b7f92;
+    --color-accent-ink: #ef9a93;
+    --color-accent-wash: #3a2224;
+
+    --color-success: #5cc495;
+    --color-success-ink: #5cc495;
+    --color-success-wash: #143528;
+    --color-success-border: #24563f;
+    --color-warning: #e8b45a;
+    --color-warning-ink: #e8b45a;
+    --color-warning-wash: #33280f;
+    --color-warning-border: #5a4415;
+    --color-danger: #ef8a86;
+    --color-danger-ink: #ef8a86;
+    --color-danger-wash: #3a1f22;
+    --color-danger-border: #5e2f31;
+    --color-info-wash: #1d3550;
+    --color-info-border: #2e4b6b;
+
+    --color-white: #0f2135;
+    --color-zinc-50: #12263a;
+    --color-zinc-100: #1a3047;
+    --color-zinc-200: #223a52;
+    --color-zinc-300: #2f4a66;
+    --color-zinc-400: #7d8fa1;
+    --color-zinc-500: #a9b4bf;
+    --color-zinc-700: #d3dbe2;
+    --color-zinc-900: #f4f3ef;
+    --color-zinc-950: #ffffff;
+
+    color-scheme: dark;
+  }
+}
+
+:root {
+  color-scheme: light;
 }
 
 body {
   font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 20px;
+  background: var(--color-canvas);
+  color: var(--color-zinc-900);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Figures (refs, dates, amounts): tabular digits so columns line up. */
+.font-mono {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Labels, table headers, tags, buttons, nav: Arial UPPERCASE, 0.5px
+   tracking, 11px (10–12pt). A utility (not a component class) so the
+   button styles below can @apply it. */
+@utility text-label {
+  font-family: var(--font-label);
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Page title: a headline in Carlito, regular weight (never bold), tight. */
+@utility title-page {
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 400;
+  color: var(--color-zinc-900);
+}
+
+/* Card / section title: Carlito, may be bold. */
+@utility title-section {
+  font-size: 18px;
+  line-height: 22px;
+  font-weight: 700;
+  color: var(--color-zinc-900);
 }
 
 @layer components {
   .input {
-    @apply rounded-lg border border-zinc-400 bg-white px-3 py-2.5 text-[0.9375rem] text-zinc-900 outline-none transition-colors duration-200 focus:border-accent focus:ring-2 focus:ring-accent focus:ring-offset-2;
-  }
-  .btn-primary {
-    @apply rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 ease-out hover:-translate-y-px hover:bg-primary-hover hover:shadow-[0_2px_8px_rgba(0,0,0,0.08)] active:translate-y-0 active:shadow-none disabled:pointer-events-none disabled:opacity-60;
-  }
-  .btn-secondary {
-    @apply rounded-lg border-[1.5px] border-zinc-400 bg-white px-4 py-[7px] text-sm font-medium text-primary transition-colors duration-200 hover:bg-zinc-50;
-  }
-  .btn-danger {
-    @apply rounded-lg border-[1.5px] border-primary bg-white px-4 py-[7px] text-sm font-medium text-primary transition-colors duration-200 hover:bg-primary hover:text-white;
-  }
-  .error-text {
-    @apply text-sm font-medium text-danger-ink;
-  }
-  .error-box {
-    @apply rounded-md border border-danger-border bg-danger-wash p-3 text-sm font-medium text-danger-ink;
+    @apply rounded-sm border-[1.5px] border-zinc-300 bg-white px-3 py-[7px] text-[15px] leading-5 text-zinc-900 outline-none transition-[border-color,box-shadow] duration-150 focus:border-primary focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--color-primary)_20%,transparent)];
   }
 
-  /* Small branded header band for a page's <h1> — a navy-to-coral gradient
-     with a faint grain overlay. Reserved for top-level page headers
-     (Dashboard, Ledger, Login); working data screens (Calendar, Settings)
-     keep a plain heading so the grain stays a "brand moment", not wallpaper. */
+  /* Buttons: fully rounded pills with Arial uppercase labels. Primary is the
+     blue (hover blue-1); secondary is the white outlined pill. */
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    @apply text-label inline-flex h-9 items-center justify-center gap-2 rounded-full border-[1.5px] px-5 whitespace-nowrap transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:pointer-events-none disabled:opacity-60;
+  }
+  .btn-primary {
+    @apply border-primary bg-primary font-bold text-on-primary hover:border-primary-hover hover:bg-primary-hover;
+  }
+  .btn-secondary {
+    @apply border-zinc-900 bg-white text-zinc-900 hover:bg-zinc-50;
+  }
+  /* Quiet destructive action (Delete in a row, Cancel reservation). */
+  .btn-danger {
+    @apply border-transparent bg-transparent text-danger-ink hover:bg-danger-wash;
+  }
+
+  .error-text {
+    @apply text-[13px] leading-4 text-danger-ink;
+  }
+  .error-box {
+    @apply rounded-sm border-[1.5px] border-danger-border bg-danger-wash px-3 py-2.5 text-[14px] text-danger-ink;
+  }
+
+  /* Header band = the MASTER's gradient panel: diagonal blue-1 → blue-2
+     with a soft white highlight in the top-left. White text. */
   .hero-band {
-    position: relative;
-    overflow: hidden;
-    border-radius: 10px;
-    padding: 20px 28px;
+    border-radius: var(--radius-lg);
+    padding: 22px 26px;
+    color: #ffffff;
     background:
-      radial-gradient(120% 100% at 100% 120%, rgba(253, 137, 115, 0.45) 0%, rgba(253, 137, 115, 0) 55%),
-      linear-gradient(160deg, #13181b 0%, #003a6c 75%, #0a4a82 100%);
+      radial-gradient(80% 80% at 10% 20%, rgb(255 255 255 / 18%), rgb(255 255 255 / 0%)),
+      linear-gradient(to bottom right, #1f4e7a, #4f86b0);
   }
-  .hero-band::before {
+
+  /* Table header rows: the warm fill (no textures in this system). */
+  .table-head-grain {
+    background-color: var(--color-zinc-50);
+  }
+
+  /* Status pill (MASTER StatusPill / TagPill): Arial uppercase in a fully
+     rounded pill with a dot in the status tone.
+       default  warm pill, warm hairline, ink text
+       --info   the blue tag pill, white text and dot
+       --danger the "bad" pill: dark fill, coral text */
+  .status-tag {
+    --tone: var(--color-zinc-500);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 22px;
+    padding: 0 10px 0 8px;
+    font-family: var(--font-label);
+    font-size: 10px;
+    line-height: 1;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--color-zinc-900);
+    background: var(--color-zinc-50);
+    border: 1.5px solid var(--color-zinc-200);
+    border-radius: 999px;
+  }
+  .status-tag::before {
     content: "";
-    position: absolute;
-    inset: 0;
-    opacity: 0.1;
-    mix-blend-mode: overlay;
-    pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.35 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--tone);
   }
-  .hero-band > * {
-    position: relative;
-    z-index: 1;
+  .status-tag--success { --tone: var(--color-success); }
+  .status-tag--warn { --tone: var(--color-warning); }
+  .status-tag--secondary { --tone: var(--color-zinc-400); }
+  .status-tag--info {
+    --tone: #ffffff;
+    color: #ffffff;
+    background: var(--color-booked);
+    border-color: var(--color-booked);
+  }
+  .status-tag--danger {
+    --tone: var(--color-accent);
+    color: var(--color-accent);
+    background: #161616;
+    border-color: #161616;
   }
 
   /* A single-line scrollable strip (the month picker) — a thin, muted
-     scrollbar instead of the browser default, so it reads as a scroll
-     affordance rather than a full-width UI chrome bar. */
+     scrollbar instead of the browser default. */
   .scroll-row {
     scrollbar-width: thin;
     scrollbar-color: var(--color-zinc-300) transparent;

@@ -1,7 +1,8 @@
-import { CARD_TONE_CLASSES, TONE_TEXT_CLASSES, type CardTone } from "./Card";
+import { TONE_TEXT_CLASSES, type CardTone } from "./Card";
 
-/** A labelled number tile — the dashboard's KPI row, tone-colored by
- * semantic meaning (info/success/warning/danger) or left neutral. */
+/** A labelled figure tile — the dashboard's KPI row: a warm card with an
+ * Arial uppercase label and the figure as a stat (Carlito, regular, large).
+ * The tone only colours the figure, so status colour stays semantic. */
 export function StatCard({
   label,
   value,
@@ -14,17 +15,12 @@ export function StatCard({
   dot?: boolean;
 }) {
   return (
-    <div className={"rounded-lg border p-4 " + (tone ? CARD_TONE_CLASSES[tone] : "border-zinc-200 bg-white")}>
-      <p
-        className={
-          "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide " +
-          (tone ? TONE_TEXT_CLASSES[tone] : "text-zinc-500")
-        }
-      >
+    <div className="rounded-lg border-[1.5px] border-zinc-200 bg-card p-5">
+      <p className="text-label flex items-center gap-1.5 text-zinc-500">
         {label}
-        {dot && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
+        {dot && <span className="h-2 w-2 rounded-full bg-accent" />}
       </p>
-      <p className={"mt-1 font-mono text-xl font-semibold " + (tone ? TONE_TEXT_CLASSES[tone] : "text-zinc-900")}>
+      <p className={"mt-2 font-mono text-[32px] leading-none " + (tone ? TONE_TEXT_CLASSES[tone] : "text-zinc-900")}>
         {value}
       </p>
     </div>

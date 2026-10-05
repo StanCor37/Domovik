@@ -1,43 +1,19 @@
-import {
-  STATUS_LABELS,
-  STATUS_PILL_CLASSES,
-  STATUS_TAG_CLASSES,
-  type ReservationStatus,
-} from "@/lib/reservations";
+import { STATUS_LABELS, STATUS_TONES, type ReservationStatus } from "@/lib/reservations";
 
-/** Dot + label tag for a list row (dashboard arrivals/departures). */
+/** StatusTag (MedConnect): the word in small caps with a coloured dot, in a
+ * glass pill tinted with the status tone. Pass the word in sentence case;
+ * the style uppercases it. */
 export function StatusTag({ status }: { status: ReservationStatus }) {
-  return (
-    <span
-      className={
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold " +
-        STATUS_TAG_CLASSES[status]
-      }
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-      {STATUS_LABELS[status]}
-    </span>
-  );
+  return <span className={"status-tag status-tag--" + STATUS_TONES[status]}>{STATUS_LABELS[status]}</span>;
 }
 
-/** Flat rounded pill for a table cell (ledger status column). */
-export function StatusPill({ status }: { status: ReservationStatus }) {
-  return (
-    <span
-      className={
-        "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium " +
-        STATUS_PILL_CLASSES[status]
-      }
-    >
-      {STATUS_LABELS[status]}
-    </span>
-  );
-}
+/** Same tag in a table cell (ledger status column). */
+export const StatusPill = StatusTag;
 
-/** Generic on/off state badge — success-tinted with a dot when on, neutral
- * gray when off (e.g. Settings → Rooms' Active/Available toggles). Renders
- * as a `<button type="submit">` when it's the control for a toggle form,
- * or a plain `<span>` when it's just a status readout. */
+/** Generic on/off state badge — a success tag when on, a muted one when off
+ * (e.g. Settings → Rooms' Active/Available toggles). Renders as a
+ * `<button type="submit">` when it's the control for a toggle form, or a
+ * plain `<span>` when it's just a status readout. */
 export function Badge({
   on,
   onLabel,
@@ -52,20 +28,14 @@ export function Badge({
   as?: "span" | "button";
 }) {
   const classes =
-    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium " +
-    (on ? "bg-success-wash text-success" : "bg-zinc-50 text-zinc-400" + (italic ? " italic" : ""));
-  const content = (
-    <>
-      {on && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
-      {on ? onLabel : offLabel}
-    </>
-  );
+    "status-tag " + (on ? "status-tag--success" : "status-tag--secondary" + (italic ? " italic" : ""));
+  const label = on ? onLabel : offLabel;
   if (as === "button") {
     return (
-      <button type="submit" className={classes}>
-        {content}
+      <button type="submit" className={classes + " cursor-pointer hover:brightness-95"}>
+        {label}
       </button>
     );
   }
-  return <span className={classes}>{content}</span>;
+  return <span className={classes}>{label}</span>;
 }

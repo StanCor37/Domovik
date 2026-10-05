@@ -1,18 +1,25 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import Link from "next/link";
+import { getTheme } from "@/lib/theme";
 import { NavLinks } from "./NavLinks";
 import { UserMenu } from "./UserMenu";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
+// MedConnect MASTER type: Carlito (Calibri metrics) for headings and body;
+// Arimo backs up Arial for labels where Arial isn't installed.
+const carlito = localFont({
+  variable: "--font-carlito",
+  src: [
+    { path: "../fonts/carlito-400.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/carlito-400-italic.woff2", weight: "400", style: "italic" },
+    { path: "../fonts/carlito-700.woff2", weight: "700", style: "normal" },
+  ],
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
+const arimo = localFont({
+  variable: "--font-arimo",
+  src: [{ path: "../fonts/arimo-400.woff2", weight: "400", style: "normal" }],
 });
 
 export const metadata: Metadata = {
@@ -20,23 +27,26 @@ export const metadata: Metadata = {
   description: "Hotel occupancy & reservation management",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const theme = await getTheme();
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      // "system" leaves the attribute off, so the CSS follows the OS setting.
+      data-theme={theme === "system" ? undefined : theme}
+      className={`${carlito.variable} ${arimo.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
+      <body className="min-h-full flex flex-col bg-canvas text-zinc-900">
         <header className="sticky top-0 z-[100] border-b border-zinc-200 bg-white">
-          <nav className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-4">
-            <Link href="/" className="font-semibold tracking-tight">
+          <nav className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-6">
+            <Link href="/" className="text-[22px] leading-none text-zinc-900">
               Domovik
             </Link>
             <NavLinks />
             <UserMenu />
           </nav>
         </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-10">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
           {children}
         </main>
       </body>

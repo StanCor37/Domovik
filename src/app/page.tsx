@@ -185,7 +185,7 @@ export default async function DashboardPage({
       </div>
 
       <div>
-        <h2 className="mb-2 font-medium">Next 7 days</h2>
+        <h2 className="mb-2 title-section">Next 7 days</h2>
         <TableWrap>
           <Table>
             <THead>
@@ -256,8 +256,8 @@ function ReservationList({
   emptyText: string;
 }) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-4">
-      <h2 className="mb-2 font-medium">{title}</h2>
+    <div className="rounded-lg border-[1.5px] border-zinc-200 bg-card p-5">
+      <h2 className="mb-2 title-section">{title}</h2>
       {reservations.length === 0 ? (
         <p className="text-sm text-zinc-500">{emptyText}</p>
       ) : (

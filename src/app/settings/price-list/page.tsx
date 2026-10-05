@@ -12,7 +12,7 @@ import { Button, FormCard, PageTitle, ScrollRow, SegmentedLink } from "@/compone
 import { savePriceListMonth } from "./actions";
 import { ImportForm } from "./ImportForm";
 
-export const metadata: Metadata = { title: "Price List" };
+export const metadata: Metadata = { title: "Price list" };
 
 const PROPERTY_ID = "singleton-property";
 
@@ -31,7 +31,7 @@ export default async function PriceListPage({
   if (!property) {
     return (
       <div className="flex flex-col gap-4">
-        <PageTitle title="Price List" />
+        <PageTitle title="Price list" />
         <p className="text-zinc-500">
           Configure the{" "}
           <Link href="/settings/property" className="underline">
@@ -46,11 +46,11 @@ export default async function PriceListPage({
   if (roomTypes.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <PageTitle title="Price List" />
+        <PageTitle title="Price list" />
         <p className="text-zinc-500">
-          The Price List is scoped per room type. Add at least one in{" "}
+          The Price list is scoped per room type. Add at least one in{" "}
           <Link href="/settings/room-types" className="underline">
-            Room Types
+            Room types
           </Link>{" "}
           first.
         </p>
@@ -60,7 +60,7 @@ export default async function PriceListPage({
   if (packages.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <PageTitle title="Price List" />
+        <PageTitle title="Price list" />
         <p className="text-zinc-500">
           No packages configured yet. Add at least one in{" "}
           <Link href="/settings/packages" className="underline">
@@ -110,7 +110,7 @@ export default async function PriceListPage({
   return (
     <div className="flex flex-col gap-6">
       <PageTitle
-        title="Price List"
+        title="Price list"
         description="One price per day per package per room type, per adult. Guest-category multipliers apply on top at booking time."
         action={
           <Button href={`/api/price-list/template?year=${year}`} variant="secondary">
@@ -160,12 +160,12 @@ export default async function PriceListPage({
           <div className="max-h-[60vh] overflow-auto rounded-md border border-zinc-200">
             <table className="w-full border-separate border-spacing-0 text-sm">
               <thead>
-                <tr className="text-left text-xs uppercase tracking-wide text-zinc-500">
-                  <th className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50 px-3 py-2">
+                <tr className="text-label text-left text-zinc-500">
+                  <th className="table-head-grain sticky top-0 z-10 border-b border-zinc-200 px-3 py-2">
                     Date
                   </th>
                   {packages.map((p) => (
-                    <th key={p.code} className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50 px-3 py-2">
+                    <th key={p.code} className="table-head-grain sticky top-0 z-10 border-b border-zinc-200 px-3 py-2">
                       {p.code}
                     </th>
                   ))}

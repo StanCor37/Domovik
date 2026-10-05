@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-/** Label + control wrapper used by every form in the app — the one place
- * that defines "what a field label looks like". */
+/** Label + control wrapper used by every form in the app: the label above
+ * in the MASTER's label style (Arial uppercase, tracked, mute). */
 export function Field({
   label,
   children,
@@ -12,8 +12,8 @@ export function Field({
   className?: string;
 }) {
   return (
-    <label className={"flex flex-col gap-1 text-sm" + (className ? " " + className : "")}>
-      <span className="font-medium text-zinc-700">{label}</span>
+    <label className={"flex flex-col gap-1.5 text-[15px]" + (className ? " " + className : "")}>
+      <span className="text-label text-zinc-500">{label}</span>
       {children}
     </label>
   );

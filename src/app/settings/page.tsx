@@ -17,8 +17,8 @@ const sections = [
   },
   {
     href: "/settings/room-types",
-    title: "Room Types",
-    description: "Categories like Single, Double, Suite — scopes the Price List.",
+    title: "Room types",
+    description: "Categories like Single, Double, Suite — scopes the Price list.",
   },
   {
     href: "/settings/packages",
@@ -32,7 +32,7 @@ const sections = [
   },
   {
     href: "/settings/price-list",
-    title: "Price List",
+    title: "Price list",
     description: "Per-day pricing by product and room type — grid entry or Excel import.",
   },
   {
@@ -42,7 +42,7 @@ const sections = [
   },
   {
     href: "/settings/payment-methods",
-    title: "Payment Methods",
+    title: "Payment methods",
     description: "The methods offered when logging a payment.",
   },
   {
@@ -61,9 +61,9 @@ export default function SettingsPage() {
           <Link
             key={section.href}
             href={section.href}
-            className="rounded-lg border border-zinc-200 bg-white p-5 transition-colors hover:border-zinc-400 hover:bg-zinc-50"
+            className="rounded-lg border-[1.5px] border-zinc-200 bg-card p-5 transition-colors hover:border-zinc-300"
           >
-            <h2 className="font-medium">{section.title}</h2>
+            <h2 className="title-section">{section.title}</h2>
             <p className="mt-1 text-sm text-zinc-500">{section.description}</p>
           </Link>
         ))}

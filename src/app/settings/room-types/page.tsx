@@ -4,7 +4,7 @@ import { Button, EmptyRow, Field, FormCard, PageTitle, Table, TableWrap, Td, THe
 import { DeleteButton } from "../DeleteButton";
 import { createRoomType, deleteRoomType, renameRoomType } from "./actions";
 
-export const metadata: Metadata = { title: "Room Types" };
+export const metadata: Metadata = { title: "Room types" };
 
 export default async function RoomTypesSettingsPage() {
   const roomTypes = await prisma.roomType.findMany({
@@ -15,10 +15,10 @@ export default async function RoomTypesSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageTitle
-        title="Room Types"
+        title="Room types"
         description={
           <>
-            Categories like Single, Double, or Suite. The Price List is scoped
+            Categories like Single, Double, or Suite. The Price list is scoped
             per room type, since different types can carry different prices for
             the same date and package. Assign each room to a type in{" "}
             <span className="font-medium">Settings → Rooms</span>.

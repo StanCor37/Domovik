@@ -19,7 +19,7 @@ export const STATUS_LABELS: Record<ReservationStatus, string> = {
   PREBOOKED: "Prebooked",
   BOOKED: "Booked",
   CANCELED: "Canceled",
-  PARTIALLY_CANCELED: "Partially Canceled",
+  PARTIALLY_CANCELED: "Partially canceled",
   COMPLETED: "Completed",
 };
 
@@ -39,36 +39,24 @@ export const STATUS_LABELS: Record<ReservationStatus, string> = {
 // slice and the seam disappears regardless of how many nights a stay
 // spans.
 export const STATUS_BLOCK_CLASSES: Record<ReservationStatus, string> = {
-  // Opaque (primary mixed into white, not primary over transparent): day
-  // pieces overlap by 1px to hide sub-pixel seams, and a translucent fill
-  // would double up in that overlap and draw a darker line per day.
-  PREBOOKED:
-    "bg-gradient-to-b from-[color-mix(in_srgb,var(--color-primary)_16%,white)] to-[color-mix(in_srgb,var(--color-primary)_8%,white)] text-primary",
-  BOOKED:
-    "bg-gradient-to-b from-primary to-[#0a5693] text-white font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
+  // Flat, opaque fills (MedConnect keeps gradients for the header band only).
+  // Opaque also matters here: day pieces overlap by 1px to hide sub-pixel
+  // seams, and a translucent fill would double up into a line per day.
+  PREBOOKED: "bg-primary-soft text-primary font-medium",
+  BOOKED: "bg-booked text-on-booked font-bold",
   CANCELED: "bg-zinc-50 text-zinc-400",
   PARTIALLY_CANCELED: "bg-zinc-300 text-zinc-900 font-medium",
   COMPLETED: "bg-zinc-100 text-zinc-500",
 };
 
-// Rounded status pill for a table cell (ledger) — a flatter, more compact
-// treatment than the calendar's occupancy bar, same status→color mapping.
-export const STATUS_PILL_CLASSES: Record<ReservationStatus, string> = {
-  PREBOOKED: "bg-zinc-100 text-zinc-700",
-  BOOKED: "bg-primary text-white",
-  CANCELED: "bg-zinc-50 text-zinc-400 ring-1 ring-inset ring-zinc-200",
-  PARTIALLY_CANCELED: "bg-zinc-300 text-zinc-900",
-  COMPLETED: "bg-zinc-100 text-zinc-500",
-};
-
-// Status dot+label tag for a list row (dashboard arrivals/departures). Only
-// the occupying statuses realistically show up here.
-export const STATUS_TAG_CLASSES: Record<ReservationStatus, string> = {
-  PREBOOKED: "bg-warning-wash text-warning-ink",
-  BOOKED: "bg-info-wash text-primary",
-  CANCELED: "bg-zinc-100 text-zinc-500",
-  PARTIALLY_CANCELED: "bg-zinc-100 text-zinc-700",
-  COMPLETED: "bg-zinc-100 text-zinc-500",
+// StatusTag tone per status (ledger, dashboard). Prebooked = nothing paid
+// yet, so it needs attention (warn); Booked is the normal state (info).
+export const STATUS_TONES: Record<ReservationStatus, "success" | "warn" | "danger" | "info" | "secondary"> = {
+  PREBOOKED: "warn",
+  BOOKED: "info",
+  CANCELED: "danger",
+  PARTIALLY_CANCELED: "secondary",
+  COMPLETED: "success",
 };
 
 // --- Payment-driven status -------------------------------------------------
@@ -96,9 +84,8 @@ export function paymentStateOf(paid: number, totalDue: number): PaymentState {
 }
 
 // Calendar bar for a Booked stay that is fully paid — the success green, in
-// the same solid-gradient treatment as partly paid Booked (navy).
-const BOOKED_PAID_BLOCK_CLASSES =
-  "bg-gradient-to-b from-success to-[#167349] text-white font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]";
+// the same flat treatment as partly paid Booked (navy).
+const BOOKED_PAID_BLOCK_CLASSES = "bg-success text-on-primary font-bold";
 
 export function calendarBlockClasses(status: ReservationStatus, paymentState: PaymentState): string {
   if (status === "BOOKED" && paymentState === "PAID") return BOOKED_PAID_BLOCK_CLASSES;

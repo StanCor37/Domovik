@@ -297,7 +297,7 @@ export function CalendarGrid({
   // gets the heavier line. Neither is drawn through a reservation bar, so a
   // stay crossing the boundary stays one continuous bar.
   function dividerClass(day: DayInfo, i: number) {
-    if (day.smenaLabel) return " border-l-2 border-l-zinc-900";
+    if (day.smenaLabel) return " border-l-2 border-l-rule-strong";
     if (day.dayOfMonth === 1 && i > 0) return " border-l border-l-zinc-300";
     return "";
   }
@@ -325,7 +325,7 @@ export function CalendarGrid({
             if (firstAvailable && iso) openCreate(firstAvailable.id, iso);
           }}
         >
-          + New Reservation
+          + New reservation
         </Button>
         {today ? (
           <Button
@@ -368,7 +368,7 @@ export function CalendarGrid({
           updateActiveMonth(e.currentTarget);
           extendIfNearEdge(e.currentTarget);
         }}
-        className="relative max-h-[70vh] overflow-auto rounded-lg border border-zinc-200 bg-white"
+        className="relative max-h-[70vh] overflow-auto rounded-lg border-[1.5px] border-zinc-200 bg-white"
       >
         <table
           className="table-fixed border-separate border-spacing-0 text-xs"
@@ -385,7 +385,7 @@ export function CalendarGrid({
               <th
                 ref={roomHeaderRef}
                 rowSpan={2}
-                className="sticky top-0 left-0 z-30 w-20 min-w-20 border-b border-r border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left align-bottom font-medium text-zinc-500"
+                className="sticky top-0 left-0 z-30 w-20 min-w-20 border-b border-r border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left align-bottom text-label font-normal text-zinc-500"
               >
                 Room
               </th>
@@ -394,7 +394,7 @@ export function CalendarGrid({
                   key={m.month}
                   colSpan={m.dayCount}
                   className={
-                    "sticky top-0 z-10 h-7 border-b border-zinc-200 bg-zinc-50 p-0 text-left font-semibold text-zinc-900" +
+                    "sticky top-0 z-10 h-7 border-b border-zinc-200 bg-zinc-50 p-0 text-left text-[15px] font-bold text-zinc-900" +
                     (i > 0 ? " border-l border-l-zinc-300" : "")
                   }
                 >
@@ -424,7 +424,7 @@ export function CalendarGrid({
                   }
                   title={day.smenaLabel ? `Smena starts: ${day.smenaLabel}` : undefined}
                 >
-                  <div className="text-[10px] uppercase text-zinc-500">{day.weekday}</div>
+                  <div className="text-[10px] text-zinc-500">{day.weekday}</div>
                   <div>{day.dayOfMonth}</div>
                 </th>
               ))}
@@ -464,7 +464,7 @@ export function CalendarGrid({
                     dragSpan !== undefined &&
                     dragSpan.roomId !== room.id &&
                     dragSpan.isos.includes(day.iso);
-                  const dropTint = isDropPreview ? (canDropOn(room.id) ? " bg-emerald-100" : " bg-red-100") : "";
+                  const dropTint = isDropPreview ? (canDropOn(room.id) ? " bg-success-wash" : " bg-danger-wash") : "";
 
                   // The guest name is drawn once per bar, from the bar's first
                   // *rendered* day, exactly as wide as the bar's visible days —
@@ -506,7 +506,7 @@ export function CalendarGrid({
                           (cell.isStart ? "pl-1" : "") +
                           (cell.isEnd ? " pr-1" : "") +
                           (day.isToday && !dropTint ? TODAY_CELL : "") +
-                          (day.smenaLabel ? " border-l-2 border-l-zinc-900" : "") +
+                          (day.smenaLabel ? " border-l-2 border-l-rule-strong" : "") +
                           dropTint
                         }
                         onClick={() =>
@@ -620,15 +620,15 @@ function ConfirmMoveModal({
     : null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4" onClick={onCancel}>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-deep-tide/50 p-4" onClick={onCancel}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-move-title"
-        className="relative z-[300] w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+        className="relative z-[300] w-full max-w-md rounded-lg border-[1.5px] border-zinc-200 bg-white p-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="confirm-move-title" className="mb-4 text-lg font-semibold">
+        <h2 id="confirm-move-title" className="mb-4 title-section">
           Change room?
         </h2>
         <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
@@ -646,7 +646,7 @@ function ConfirmMoveModal({
           <dd>
             <span className="text-zinc-500 line-through">{fromRoom}</span>
             <span className="mx-2">→</span>
-            <span className="font-semibold">{toRoom}</span>
+            <span className="font-medium text-primary">{toRoom}</span>
           </dd>
         </dl>
         <p className="mb-6 text-sm text-zinc-500">Dates and price stay the same — only the room changes.</p>

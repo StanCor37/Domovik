@@ -11,12 +11,13 @@ export const CARD_TONE_CLASSES: Record<CardTone, string> = {
 
 export const TONE_TEXT_CLASSES: Record<CardTone, string> = {
   info: "text-primary",
-  success: "text-success",
+  success: "text-success-ink",
   warning: "text-warning-ink",
   danger: "text-danger-ink",
 };
 
-/** Base bordered surface — optionally tinted with a semantic tone wash. */
+/** Base surface (MASTER warm card): warm fill, 1.5px warm hairline, 13px
+ * corners, no shadow — optionally tinted with a status wash. */
 export function Card({
   tone,
   className,
@@ -29,8 +30,8 @@ export function Card({
   return (
     <div
       className={
-        "rounded-lg border p-4 " +
-        (tone ? CARD_TONE_CLASSES[tone] : "border-zinc-200 bg-white") +
+        "rounded-lg border-[1.5px] p-5 " +
+        (tone ? CARD_TONE_CLASSES[tone] : "border-zinc-200 bg-card") +
         (className ? " " + className : "")
       }
     >
@@ -39,8 +40,8 @@ export function Card({
   );
 }
 
-/** The white bordered box every settings form (and the reservation list/
- * table wrapper) sits in, with an optional small heading. */
+/** The warm card every settings form sits in, with an optional card title
+ * (Carlito 18px bold). */
 export function FormCard({
   title,
   maxWidth,
@@ -56,13 +57,13 @@ export function FormCard({
   return (
     <form
       className={
-        "flex flex-col gap-4 rounded-lg border border-zinc-200 bg-white p-6 " +
+        "flex flex-col gap-4 rounded-lg border-[1.5px] border-zinc-200 bg-card p-5 " +
         (maxWidth ?? "") +
         (className ? " " + className : "")
       }
       {...rest}
     >
-      {title && <h2 className="font-medium">{title}</h2>}
+      {title && <h2 className="title-section">{title}</h2>}
       {children}
     </form>
   );

@@ -23,10 +23,10 @@ export function NavLinks() {
             key={link.href}
             href={link.href}
             className={
-              "border-b-2 pb-0.5 text-sm " +
+              "text-label flex h-14 items-center border-b-2 " +
               (isActive
-                ? "border-primary font-medium text-zinc-950"
-                : "border-transparent text-zinc-500 hover:text-zinc-950")
+                ? "border-primary text-zinc-900"
+                : "border-transparent text-zinc-500 hover:text-zinc-900")
             }
           >
             {link.label}

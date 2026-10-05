@@ -1,18 +1,19 @@
 import Link from "next/link";
 import type { ComponentProps } from "react";
 
+// The MASTER's chips: fully rounded warm pills; the selected one is blue.
 function segmentClasses(active: boolean) {
   return (
-    "shrink-0 whitespace-nowrap " +
+    "inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full border-[1.5px] px-4 text-[15px] transition-colors " +
     (active
-      ? "rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white"
-      : "rounded-md border border-zinc-400 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50")
+      ? "border-primary bg-primary text-on-primary"
+      : "border-zinc-50 bg-card text-zinc-900 hover:border-zinc-200")
   );
 }
 
 /** One pill in a segmented nav (month picker, room-type tabs) — solid dark
  * fill when active, outlined when not. Used instead of raw Link markup so
- * Calendar's and Price List's month tabs, and Price List's room-type tabs,
+ * Calendar's and Price list's month tabs, and Price list's room-type tabs,
  * share one definition of "selected" vs "not". */
 export function SegmentedLink({
   active,

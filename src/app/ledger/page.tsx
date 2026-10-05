@@ -145,7 +145,7 @@ export default async function LedgerPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Outgoing Invoices Ledger" />
+      <PageHeader title="Outgoing invoices ledger" />
 
       <form className="flex flex-wrap items-end gap-3" action="/ledger" method="get">
         <input type="hidden" name="sort" value={sortKey} />

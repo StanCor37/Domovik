@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-/** Plain page title — every settings/calendar screen. No hero band: those
- * stay reserved for Dashboard/Ledger/Login, see PageHeader below. */
+/** Page title: a headline in Carlito, regular weight, tight leading —
+ * settings and calendar screens. */
 export function PageTitle({
   title,
   description,
@@ -12,18 +12,18 @@ export function PageTitle({
   action?: ReactNode;
 }) {
   return (
-    <div className={action ? "flex items-center justify-between" : undefined}>
+    <div className={action ? "flex flex-wrap items-end justify-between gap-3" : undefined}>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 text-sm text-zinc-500">{description}</p>}
+        <h1 className="title-page">{title}</h1>
+        {description && <p className="mt-2 text-[15px] leading-5 text-zinc-500">{description}</p>}
       </div>
       {action}
     </div>
   );
 }
 
-/** Branded navy/coral grain header band — reserved for top-level "brand
- * moment" screens (Dashboard, Ledger, Login), per the design system. */
+/** Header band: the MASTER's blue gradient panel with white text —
+ * Dashboard, Ledger and Login. */
 export function PageHeader({
   title,
   subtitle,
@@ -35,8 +35,8 @@ export function PageHeader({
 }) {
   return (
     <div className={"hero-band" + (className ? " " + className : "")}>
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">{title}</h1>
-      {subtitle && <p className="mt-1 text-sm text-zinc-200">{subtitle}</p>}
+      <h1 className="text-[30px] leading-none font-normal text-white">{title}</h1>
+      {subtitle && <p className="mt-2 text-[15px] leading-5 text-[#e3ecf4]">{subtitle}</p>}
     </div>
   );
 }

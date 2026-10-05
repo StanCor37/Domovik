@@ -43,7 +43,7 @@ export default async function RoomsSettingsPage() {
             37 defaults to unavailable for reservation — toggle it on when
             ready. Manage the type list itself in{" "}
             <Link href="/settings/room-types" className="underline">
-              Room Types
+              Room types
             </Link>
             .
           </>
@@ -54,7 +54,7 @@ export default async function RoomsSettingsPage() {
         <p className="text-zinc-500">
           No room types configured yet. Add at least one in{" "}
           <Link href="/settings/room-types" className="underline">
-            Room Types
+            Room types
           </Link>{" "}
           before adding rooms.
         </p>

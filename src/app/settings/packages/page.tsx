@@ -13,7 +13,7 @@ export default async function PackagesSettingsPage() {
     <div className="flex flex-col gap-6">
       <PageTitle
         title="Packages"
-        description="The board/package options offered on a reservation (e.g. Full Board, Half Board). The code is fixed once created — it's the identifier stored on reservations and the Price List — but the label can be renamed anytime."
+        description="The board/package options offered on a reservation (e.g. Full Board, Half Board). The code is fixed once created — it's the identifier stored on reservations and the Price list — but the label can be renamed anytime."
       />
 
       <TableWrap>

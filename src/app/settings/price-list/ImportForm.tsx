@@ -39,7 +39,7 @@ export function ImportForm({
           />
         </Field>
         <fieldset className="flex flex-col gap-1 text-sm">
-          <legend className="font-medium text-zinc-700">Mode</legend>
+          <legend className="text-label text-zinc-500">Mode</legend>
           <label className="flex items-center gap-1.5">
             <input type="radio" name="mode" value="fill-gaps" defaultChecked />
             Fill gaps only

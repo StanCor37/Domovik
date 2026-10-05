@@ -1,24 +1,28 @@
 import type { ReactNode } from "react";
 
 /** The bordered, rounded, scrollable wrapper every data table in the app
- * sits in. */
+ * sits in: white, warm hairline, 13px corners, no shadow. */
 export function TableWrap({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={"overflow-x-auto rounded-lg border border-zinc-200 bg-white" + (className ? " " + className : "")}>
+    <div className={"overflow-x-auto rounded-lg border-[1.5px] border-zinc-200 bg-white" + (className ? " " + className : "")}>
       {children}
     </div>
   );
 }
 
+/** Refs, dates and amounts line up: tabular figures. */
 export function Table({ children, className }: { children: ReactNode; className?: string }) {
-  return <table className={"w-full text-sm" + (className ? " " + className : "")}>{children}</table>;
+  return (
+    <table className={"w-full text-[15px] leading-5 font-mono" + (className ? " " + className : "")}>{children}</table>
+  );
 }
 
-/** Standard header row — uppercase, muted, zinc-50 background. */
+/** Header row: Arial uppercase labels (as the MASTER's RowTable labels) in
+ * mute on the warm fill. */
 export function THead({ children }: { children: ReactNode }) {
   return (
     <thead>
-      <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs font-medium uppercase tracking-wide text-zinc-500">
+      <tr className="table-head-grain text-label border-b-[1.5px] border-zinc-200 text-left text-zinc-500">
         {children}
       </tr>
     </thead>
@@ -39,9 +43,9 @@ export function Th({
   return (
     <th
       className={
-        "px-4 py-3 whitespace-nowrap " +
+        "px-3 py-2.5 font-normal whitespace-nowrap " +
         (align === "right" ? "text-right " : "text-left ") +
-        (sticky ? "sticky left-0 z-20 bg-zinc-50 " : "") +
+        (sticky ? "table-head-grain sticky left-0 z-20 " : "") +
         (className ?? "")
       }
     >
@@ -50,7 +54,7 @@ export function Th({
   );
 }
 
-/** Standard body row. */
+/** Body row: warm hairline divider, warm fill on hover. */
 export function Tr({
   children,
   className,
@@ -61,21 +65,25 @@ export function Tr({
   onClick?: () => void;
 }) {
   return (
-    <tr className={"border-b border-zinc-100 last:border-0" + (className ? " " + className : "")} onClick={onClick}>
+    <tr
+      className={"border-b border-zinc-200 last:border-0 hover:bg-zinc-50" + (className ? " " + className : "")}
+      onClick={onClick}
+    >
       {children}
     </tr>
   );
 }
 
+/** Body cell: 40px rows. */
 export function Td({ children, className }: { children?: ReactNode; className?: string }) {
-  return <td className={"px-4 py-3" + (className ? " " + className : "")}>{children}</td>;
+  return <td className={"h-10 px-3 py-2" + (className ? " " + className : "")}>{children}</td>;
 }
 
 /** The "nothing here yet" row every table shows for its empty state. */
 export function EmptyRow({ colSpan, children }: { colSpan: number; children: ReactNode }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-4 py-6 text-center text-zinc-500">
+      <td colSpan={colSpan} className="px-3 py-8 text-center font-sans text-zinc-500">
         {children}
       </td>
     </tr>

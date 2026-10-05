@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { Button, Field, FormCard, PageTitle } from "@/components/ui";
 import { updatePaymentMethods } from "./actions";
 
-export const metadata: Metadata = { title: "Payment Methods" };
+export const metadata: Metadata = { title: "Payment methods" };
 
 export default async function PaymentMethodsSettingsPage() {
   const settings = await prisma.settings.findUnique({
@@ -13,7 +13,7 @@ export default async function PaymentMethodsSettingsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageTitle
-        title="Payment Methods"
+        title="Payment methods"
         description="Comma-separated list. These appear as options when logging a payment against a reservation."
       />
 

@@ -336,16 +336,16 @@ export function ReservationModal({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-deep-tide/50 p-4"
       onClick={onClose}
     >
       <div
-        className="relative z-[300] flex max-h-[90vh] w-full max-w-2xl flex-col overflow-y-auto rounded-lg bg-white p-6 shadow-xl"
+        className="relative z-[300] flex max-h-[90vh] w-full max-w-2xl flex-col overflow-y-auto rounded-lg border-[1.5px] border-zinc-200 bg-white p-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            {target.mode === "edit" ? "Edit Reservation" : "New Reservation"}
+          <h2 className="title-section">
+            {target.mode === "edit" ? "Edit reservation" : "New reservation"}
             {reservationNumber && (
               <span className="ml-2 text-sm font-normal text-zinc-500">
                 {reservationNumber}
@@ -454,7 +454,7 @@ export function ReservationModal({
               )}
               {isLeavingEarly && (
                 <fieldset className="col-span-full flex flex-col gap-2 rounded-md border border-zinc-200 p-3 text-sm">
-                  <legend className="px-1 font-medium">Price for the shorter stay</legend>
+                  <legend className="text-label px-1 text-zinc-500">Price for the shorter stay</legend>
                   {leaveDate && leavePreview && (
                     <p className="text-xs text-zinc-500">
                       {leavePreview.nightCount} {leavePreview.nightCount === 1 ? "night" : "nights"} stayed · tax
@@ -508,7 +508,7 @@ export function ReservationModal({
 
             <div>
               <div className="mb-1 flex items-center justify-between">
-                <span className="text-sm font-medium text-zinc-700">Guests</span>
+                <span className="text-label text-zinc-500">Guests</span>
                 <Button
                   type="button"
                   variant="secondary"
@@ -574,7 +574,7 @@ export function ReservationModal({
                       <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
                       No price entered for: {preview.missingPriceDates.join(", ")}. Those
                       nights priced as 0 — set the final amount manually or fill in the{" "}
-                      Price List.
+                      Price list.
                     </p>
                   )}
                 </div>
@@ -625,7 +625,7 @@ export function ReservationModal({
             {reservationId ? (
               <div className="flex flex-col gap-3 rounded-md border border-zinc-200 p-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-zinc-700">Payments</span>
+                  <span className="text-label text-zinc-500">Payments</span>
                   <span className="text-sm text-zinc-500">
                     Due {money(totalDue)} · Paid {money(totalPaid)} ·{" "}
                     <span className={balanceDue > 0 ? "font-semibold text-danger-ink" : "font-normal text-zinc-500"}>
@@ -743,7 +743,7 @@ export function ReservationModal({
                         ? "Canceling…"
                         : confirmingCancel
                           ? "Click again to confirm"
-                          : "Cancel Reservation"}
+                          : "Cancel reservation"}
                     </Button>
                     {confirmingCancel && !isCanceling && (
                       <button
