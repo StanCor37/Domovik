@@ -309,6 +309,48 @@ export async function getReservation(id: string): Promise<ReservationDetail | nu
   };
 }
 
+// Moves a stay to another room on the same dates (calendar drag and drop).
+// Only the room changes: dates and every amount (base, discount, final,
+// tax) stay exactly as they were, whatever the new room's type or prices.
+export async function moveReservationToRoom(
+  id: string,
+  roomId: string
+): Promise<SaveReservationResult> {
+  try {
+    const reservation = await prisma.reservation.findUnique({ where: { id } });
+    if (!reservation) return { ok: false, error: "Reservation not found." };
+    if (reservation.roomId === roomId) {
+      return { ok: true, reservationId: id, reservationNumber: reservation.reservationNumber };
+    }
+
+    const room = await prisma.room.findUnique({ where: { id: roomId } });
+    if (!room || !room.active) return { ok: false, error: "Room not found." };
+    if (!room.availableForReservation) {
+      return { ok: false, error: `Room ${room.number} is not available for reservations.` };
+    }
+
+    const conflict = await findConflict({
+      roomId,
+      checkIn: reservation.checkIn,
+      checkOut: reservation.checkOut,
+      excludeReservationId: id,
+    });
+    if (conflict) {
+      return {
+        ok: false,
+        error: `Room ${room.number} is already booked for one or more of these nights.`,
+        conflict: conflictInfo(conflict),
+      };
+    }
+
+    await prisma.reservation.update({ where: { id }, data: { roomId } });
+    revalidatePath("/calendar");
+    return { ok: true, reservationId: id, reservationNumber: reservation.reservationNumber };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed to move reservation." };
+  }
+}
+
 // Cancellation never deletes the reservation — only changes status. The
 // room frees up immediately since CANCELED is not an occupying status.
 export async function cancelReservation(id: string): Promise<SaveReservationResult> {

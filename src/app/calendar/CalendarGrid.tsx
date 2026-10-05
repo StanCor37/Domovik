@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { STATUS_BLOCK_CLASSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
 import { Button, ScrollRow, SegmentedButton } from "@/components/ui";
 import { ReservationModal, type ModalTarget, type PackageOption, type RoomOption } from "../reservations/ReservationModal";
+import { moveReservationToRoom } from "../reservations/actions";
 
 export type DayInfo = {
   iso: string;
@@ -42,6 +44,35 @@ const EDGE_PX = 400;
 const ROOM_COL_PX = 80;
 const DAY_COL_PX = 36;
 
+type Move = { reservationId: string; toRoomId: string };
+
+type Notice =
+  | { kind: "moved"; text: string; undo: Move }
+  | { kind: "error"; text: string };
+
+/** Every reservation's room and in-season nights, rebuilt from the cell map. */
+function spansOf(cells: Record<string, CellInfo>) {
+  const spans = new Map<string, { roomId: string; isos: string[]; guestName: string }>();
+  for (const [key, cell] of Object.entries(cells)) {
+    if (!cell) continue;
+    const [roomId, iso] = key.split("|");
+    const span = spans.get(cell.reservationId);
+    if (span) span.isos.push(iso);
+    else spans.set(cell.reservationId, { roomId, isos: [iso], guestName: cell.guestName });
+  }
+  return spans;
+}
+
+/** The cell map with one reservation shifted to another room (same nights). */
+function applyMove(cells: Record<string, CellInfo>, move: Move) {
+  const span = spansOf(cells).get(move.reservationId);
+  if (!span) return cells;
+  const next = { ...cells };
+  for (const iso of span.isos) delete next[`${span.roomId}|${iso}`];
+  for (const iso of span.isos) next[`${move.toRoomId}|${iso}`] = cells[`${span.roomId}|${iso}`];
+  return next;
+}
+
 type PendingScroll =
   | { type: "prepend"; prevScrollWidth: number }
   | { type: "jump"; month: number }
@@ -67,6 +98,18 @@ export function CalendarGrid({
   currency: string;
 }) {
   const [target, setTarget] = useState<ModalTarget | null>(null);
+  const router = useRouter();
+
+  // Drag and drop between rooms: the bar moves at once (optimistically) and
+  // the server confirms; on failure the optimistic state simply falls away.
+  const [shownCells, addOptimisticMove] = useOptimistic(cells, applyMove);
+  const spans = useMemo(() => spansOf(shownCells), [shownCells]);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropRoomId, setDropRoomId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  // A drop only proposes the move; it happens once confirmed in the modal.
+  const [confirmMove, setConfirmMove] = useState<Move | null>(null);
+  const [, startMoving] = useTransition();
   const today = days.find((d) => d.isToday);
   const lastIdx = months.length - 1;
   const initialIdx = Math.max(0, months.findIndex((m) => m.month === initialMonth));
@@ -169,6 +212,47 @@ export function CalendarGrid({
     }));
   }
 
+  // A room accepts the dragged stay if it's bookable and free on all of the
+  // stay's nights. The server re-checks this (including nights outside the
+  // loaded season) before saving.
+  function canDropOn(roomId: string) {
+    const span = dragging ? spans.get(dragging) : undefined;
+    const room = rooms.find((r) => r.id === roomId);
+    if (!span || !room || !room.availableForReservation || roomId === span.roomId) return false;
+    return span.isos.every((iso) => {
+      const other = shownCells[`${roomId}|${iso}`];
+      return !other || other.reservationId === dragging;
+    });
+  }
+
+  function move(m: Move, isUndo = false) {
+    const span = spans.get(m.reservationId);
+    const fromRoomId = span?.roomId;
+    const toRoom = rooms.find((r) => r.id === m.toRoomId);
+    setNotice(null);
+    startMoving(async () => {
+      addOptimisticMove(m);
+      const result = await moveReservationToRoom(m.reservationId, m.toRoomId);
+      if (!result.ok) {
+        setNotice({ kind: "error", text: result.error });
+        return;
+      }
+      router.refresh();
+      if (!isUndo && fromRoomId) {
+        setNotice({
+          kind: "moved",
+          text: `Moved ${span?.guestName} (${result.reservationNumber}) to room ${toRoom?.number}.`,
+          undo: { reservationId: m.reservationId, toRoomId: fromRoomId },
+        });
+      }
+    });
+  }
+
+  function endDrag() {
+    setDragging(null);
+    setDropRoomId(null);
+  }
+
   function openCreate(roomId: string, iso: string) {
     const checkOutDate = new Date(`${iso}T00:00:00.000Z`);
     checkOutDate.setUTCDate(checkOutDate.getUTCDate() + 1);
@@ -231,6 +315,26 @@ export function CalendarGrid({
           </Button>
         )}
       </div>
+
+      {notice && (
+        <div
+          role="status"
+          className={
+            "flex items-center gap-3 rounded-md px-3 py-2 text-sm " +
+            (notice.kind === "error" ? "bg-red-50 text-red-800" : "bg-zinc-100 text-zinc-800")
+          }
+        >
+          <span className="flex-1">{notice.text}</span>
+          {notice.kind === "moved" && (
+            <button type="button" className="font-medium underline" onClick={() => move(notice.undo, true)}>
+              Undo
+            </button>
+          )}
+          <button type="button" aria-label="Dismiss" className="text-zinc-500" onClick={() => setNotice(null)}>
+            ✕
+          </button>
+        </div>
+      )}
 
       <div
         ref={scrollRef}
@@ -302,7 +406,22 @@ export function CalendarGrid({
           </thead>
           <tbody>
             {rooms.map((room) => (
-              <tr key={room.id}>
+              <tr
+                key={room.id}
+                onDragOver={(e) => {
+                  if (!dragging) return;
+                  setDropRoomId(room.id);
+                  if (canDropOn(room.id)) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragging && canDropOn(room.id)) setConfirmMove({ reservationId: dragging, toRoomId: room.id });
+                  endDrag();
+                }}
+              >
                 <td className="sticky left-0 z-10 w-20 min-w-20 border-b border-r border-zinc-200 bg-white px-2 py-1 font-medium">
                   {room.number}
                   {!room.availableForReservation && (
@@ -310,7 +429,16 @@ export function CalendarGrid({
                   )}
                 </td>
                 {visibleDays.map((day, i) => {
-                  const cell = cells[`${room.id}|${day.iso}`] ?? null;
+                  const cell = shownCells[`${room.id}|${day.iso}`] ?? null;
+                  // While dragging, the nights the stay would land on in the
+                  // hovered room are tinted green (free) or red (blocked).
+                  const dragSpan = dragging ? spans.get(dragging) : undefined;
+                  const isDropPreview =
+                    dropRoomId === room.id &&
+                    dragSpan !== undefined &&
+                    dragSpan.roomId !== room.id &&
+                    dragSpan.isos.includes(day.iso);
+                  const dropTint = isDropPreview ? (canDropOn(room.id) ? " bg-emerald-100" : " bg-red-100") : "";
 
                   if (!cell) {
                     return (
@@ -318,7 +446,8 @@ export function CalendarGrid({
                         key={day.iso}
                         className={
                           "h-8 min-w-9 cursor-pointer border-b border-zinc-100 hover:bg-zinc-50 " +
-                          (day.isToday ? "bg-gradient-to-b from-accent/12 to-accent/3" : "") +
+                          (day.isToday && !dropTint ? "bg-gradient-to-b from-accent/12 to-accent/3" : "") +
+                          dropTint +
                           dividerClass(day, i)
                         }
                         onClick={() => openCreate(room.id, day.iso)}
@@ -334,16 +463,26 @@ export function CalendarGrid({
                           (cell.isStart ? "pl-1" : "") +
                           (cell.isEnd ? " pr-1" : "") +
                           (day.isToday ? " ring-1 ring-inset ring-accent/25" : "") +
-                          (day.smenaLabel ? " border-l-2 border-l-zinc-900" : "")
+                          (day.smenaLabel ? " border-l-2 border-l-zinc-900" : "") +
+                          dropTint
                         }
                         onClick={() =>
                           setTarget({ mode: "edit", reservationId: cell.reservationId })
                         }
                       >
                         <div
-                          title={`${cell.guestName} — ${STATUS_LABELS[cell.status]}`}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.effectAllowed = "move";
+                            e.dataTransfer.setData("text/plain", cell.reservationId);
+                            setNotice(null);
+                            setDragging(cell.reservationId);
+                          }}
+                          onDragEnd={endDrag}
+                          title={`${cell.guestName} — ${STATUS_LABELS[cell.status]} (drag to another room to move)`}
                           className={
-                            "h-6 text-center text-[10px] leading-6 " +
+                            "h-6 cursor-grab text-center text-[10px] leading-6 active:cursor-grabbing " +
+                            (dragging === cell.reservationId ? "opacity-40 " : "") +
                             STATUS_BLOCK_CLASSES[cell.status] +
                             (cell.isStart ? " rounded-l-lg" : "") +
                             (cell.isEnd ? " rounded-r-lg" : "")
@@ -367,6 +506,20 @@ export function CalendarGrid({
         </table>
       </div>
 
+      {confirmMove && (
+        <ConfirmMoveModal
+          guestName={spans.get(confirmMove.reservationId)?.guestName ?? ""}
+          isos={spans.get(confirmMove.reservationId)?.isos ?? []}
+          fromRoom={rooms.find((r) => r.id === spans.get(confirmMove.reservationId)?.roomId)?.number ?? ""}
+          toRoom={rooms.find((r) => r.id === confirmMove.toRoomId)?.number ?? ""}
+          onCancel={() => setConfirmMove(null)}
+          onConfirm={() => {
+            move(confirmMove);
+            setConfirmMove(null);
+          }}
+        />
+      )}
+
       {target && (
         <ReservationModal
           target={target}
@@ -377,6 +530,87 @@ export function CalendarGrid({
           onClose={() => setTarget(null)}
         />
       )}
+    </div>
+  );
+}
+
+const DATE_FORMAT = new Intl.DateTimeFormat("en-GB", {
+  weekday: "short",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+function ConfirmMoveModal({
+  guestName,
+  isos,
+  fromRoom,
+  toRoom,
+  onCancel,
+  onConfirm,
+}: {
+  guestName: string;
+  isos: string[];
+  fromRoom: string;
+  toRoom: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCancel]);
+
+  const nights = [...isos].sort();
+  const checkIn = nights[0] ? new Date(`${nights[0]}T00:00:00.000Z`) : null;
+  const checkOut = nights.length
+    ? new Date(new Date(`${nights[nights.length - 1]}T00:00:00.000Z`).getTime() + 86400000)
+    : null;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 p-4" onClick={onCancel}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-move-title"
+        className="relative z-[300] w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 id="confirm-move-title" className="mb-4 text-lg font-semibold">
+          Change room?
+        </h2>
+        <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+          <dt className="text-zinc-500">Guest</dt>
+          <dd className="font-medium">{guestName}</dd>
+          <dt className="text-zinc-500">Stay</dt>
+          <dd>
+            {checkIn && checkOut ? `${DATE_FORMAT.format(checkIn)} → ${DATE_FORMAT.format(checkOut)}` : "—"}
+            <span className="text-zinc-500">
+              {" "}
+              ({nights.length} {nights.length === 1 ? "night" : "nights"})
+            </span>
+          </dd>
+          <dt className="text-zinc-500">Room</dt>
+          <dd>
+            <span className="text-zinc-500 line-through">{fromRoom}</span>
+            <span className="mx-2">→</span>
+            <span className="font-semibold">{toRoom}</span>
+          </dd>
+        </dl>
+        <p className="mb-6 text-sm text-zinc-500">Dates and price stay the same — only the room changes.</p>
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={onConfirm} autoFocus>
+            Change room
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
