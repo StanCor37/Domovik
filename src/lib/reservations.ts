@@ -39,7 +39,11 @@ export const STATUS_LABELS: Record<ReservationStatus, string> = {
 // slice and the seam disappears regardless of how many nights a stay
 // spans.
 export const STATUS_BLOCK_CLASSES: Record<ReservationStatus, string> = {
-  PREBOOKED: "bg-gradient-to-b from-primary/16 to-primary/8 text-primary",
+  // Opaque (primary mixed into white, not primary over transparent): day
+  // pieces overlap by 1px to hide sub-pixel seams, and a translucent fill
+  // would double up in that overlap and draw a darker line per day.
+  PREBOOKED:
+    "bg-gradient-to-b from-[color-mix(in_srgb,var(--color-primary)_16%,white)] to-[color-mix(in_srgb,var(--color-primary)_8%,white)] text-primary",
   BOOKED:
     "bg-gradient-to-b from-primary to-[#0a5693] text-white font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
   CANCELED: "bg-zinc-50 text-zinc-400",

@@ -44,6 +44,10 @@ const EDGE_PX = 400;
 const ROOM_COL_PX = 80;
 const DAY_COL_PX = 36;
 
+// Today's column tint. Deliberately flat: a per-cell gradient would restart
+// in every room row and stripe the column instead of reading as one band.
+const TODAY_CELL = " bg-accent/8";
+
 type Move = { reservationId: string; toRoomId: string };
 
 type Notice =
@@ -116,7 +120,12 @@ export function CalendarGrid({
 
   // The season is one continuous strip, but only the months in [start, end]
   // are rendered; more are added as the user scrolls toward either end.
-  const [range, setRange] = useState({ start: initialIdx, end: Math.min(initialIdx + 1, lastIdx) });
+  // The previous month starts rendered too, so a day early in the month
+  // (e.g. today on the 5th) has room on its left to be scrolled to center.
+  const [range, setRange] = useState({
+    start: Math.max(initialIdx - 1, 0),
+    end: Math.min(initialIdx + 1, lastIdx),
+  });
   const [activeMonth, setActiveMonth] = useState(months[initialIdx]?.month);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -135,16 +144,19 @@ export function CalendarGrid({
     return roomHeaderRef.current?.offsetWidth ?? 0;
   }
 
-  // The month whose days are at the left edge of the view (just right of the
-  // sticky Room column) — highlighted in the month picker.
+  // The month in the middle of the visible days (right of the sticky Room
+  // column) — highlighted in the month picker. Middle rather than left edge,
+  // so with today centered the picker names today's month.
   function updateActiveMonth(el: HTMLDivElement) {
+    const viewCenter = el.scrollLeft + roomColWidth() + (el.clientWidth - roomColWidth()) / 2;
     let current = visibleMonths[0]?.month;
     for (const m of visibleMonths) {
       const th = monthStartRefs.current.get(m.month);
-      if (th && th.offsetLeft - roomColWidth() <= el.scrollLeft + DAY_COL_PX / 2) current = m.month;
+      if (th && th.offsetLeft <= viewCenter) current = m.month;
     }
-    // At the far right the last (often partial) month can't reach the left
-    // edge, so highlight it once its first day is in view.
+    // A short partial month at either end of the season (e.g. May 26–31) may
+    // never reach the middle, so at the very start/end highlight it instead.
+    if (range.start === 0 && el.scrollLeft <= 1 && visibleMonths[0]) current = visibleMonths[0].month;
     const last = visibleMonths[visibleMonths.length - 1];
     const lastTh = last && range.end === lastIdx ? monthStartRefs.current.get(last.month) : undefined;
     if (lastTh && el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 && lastTh.offsetLeft < el.scrollLeft + el.clientWidth) {
@@ -446,7 +458,7 @@ export function CalendarGrid({
                         key={day.iso}
                         className={
                           "h-8 min-w-9 cursor-pointer border-b border-zinc-100 hover:bg-zinc-50 " +
-                          (day.isToday && !dropTint ? "bg-gradient-to-b from-accent/12 to-accent/3" : "") +
+                          (day.isToday && !dropTint ? TODAY_CELL : "") +
                           dropTint +
                           dividerClass(day, i)
                         }
@@ -462,7 +474,7 @@ export function CalendarGrid({
                           "h-8 min-w-9 cursor-pointer border-b border-zinc-100 " +
                           (cell.isStart ? "pl-1" : "") +
                           (cell.isEnd ? " pr-1" : "") +
-                          (day.isToday ? " ring-1 ring-inset ring-accent/25" : "") +
+                          (day.isToday && !dropTint ? TODAY_CELL : "") +
                           (day.smenaLabel ? " border-l-2 border-l-zinc-900" : "") +
                           dropTint
                         }
@@ -485,7 +497,10 @@ export function CalendarGrid({
                             (dragging === cell.reservationId ? "opacity-40 " : "") +
                             STATUS_BLOCK_CLASSES[cell.status] +
                             (cell.isStart ? " rounded-l-lg" : "") +
-                            (cell.isEnd ? " rounded-r-lg" : "")
+                            // Each day's piece reaches 1px under the next day's,
+                            // so at fractional display scaling (e.g. 150%) the
+                            // anti-aliased cell edges can't show as seams.
+                            (cell.isEnd ? " rounded-r-lg" : " -mr-px")
                           }
                         >
                           {/* The name may be wider than one day, so it overflows
