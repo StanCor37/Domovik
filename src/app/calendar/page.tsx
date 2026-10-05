@@ -12,7 +12,13 @@ import {
 } from "@/lib/season";
 import { compareNatural } from "@/lib/sort";
 import { parsePaymentMethods } from "@/lib/paymentMethods";
-import { OCCUPYING_STATUSES, STATUS_BLOCK_CLASSES, type ReservationStatus } from "@/lib/reservations";
+import {
+  OCCUPYING_STATUSES,
+  STATUS_BLOCK_CLASSES,
+  calendarBlockClasses,
+  paymentStateOf,
+  type ReservationStatus,
+} from "@/lib/reservations";
 import { Button, PageTitle } from "@/components/ui";
 import { CalendarGrid, type CellInfo, type DayInfo, type MonthInfo } from "./CalendarGrid";
 
@@ -104,6 +110,9 @@ export default async function CalendarPage({
     checkIn: Date;
     checkOut: Date;
     status: string;
+    finalAmount: number;
+    taxAmount: number;
+    payments: { amount: number }[];
   }[] = [];
 
   if (monthDays.length > 0 && sortedRooms.length > 0) {
@@ -116,6 +125,7 @@ export default async function CalendarPage({
         checkIn: { lt: rangeEnd },
         checkOut: { gt: rangeStart },
       },
+      include: { payments: { select: { amount: true } } },
     });
   }
 
@@ -138,18 +148,20 @@ export default async function CalendarPage({
     // a flat edge rather than a false end cap.
     const checkInIso = dateToIso(r.checkIn);
     const lastNightIso = dateToIso(new Date(r.checkOut.getTime() - 86400000));
-    // The label always goes on the middle of the in-season run so it reads
-    // as centered across the bar, wherever the season cuts it off.
-    const labelIso = runIsos[Math.floor((runIsos.length - 1) / 2)];
+    // Paid vs. the total due (final amount + tourist tax), as in the ledger.
+    const paymentState = paymentStateOf(
+      r.payments.reduce((sum, p) => sum + p.amount, 0),
+      r.finalAmount + r.taxAmount
+    );
 
     for (const iso of runIsos) {
       cells[`${r.roomId}|${iso}`] = {
         reservationId: r.id,
         guestName: r.guestName,
         status: r.status as ReservationStatus,
+        paymentState,
         isStart: iso === checkInIso,
         isEnd: iso === lastNightIso,
-        showLabel: iso === labelIso,
       };
     }
   }
@@ -161,8 +173,10 @@ export default async function CalendarPage({
         action={
           <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
             <LegendSwatch className="bg-white ring-1 ring-inset ring-zinc-400" label="Free" />
-            <LegendSwatch className={STATUS_BLOCK_CLASSES.BOOKED} label="Booked" />
-            <LegendSwatch className={STATUS_BLOCK_CLASSES.PREBOOKED} label="Prebooked" />
+            <LegendSwatch className={STATUS_BLOCK_CLASSES.PREBOOKED} label="Prebooked (unpaid)" />
+            <LegendSwatch className={calendarBlockClasses("BOOKED", "PARTIAL")} label="Booked · partly paid" />
+            <LegendSwatch className={calendarBlockClasses("BOOKED", "PAID")} label="Booked · fully paid" />
+            <LegendSwatch className={STATUS_BLOCK_CLASSES.PARTIALLY_CANCELED} label="Partially canceled" />
           </div>
         }
       />

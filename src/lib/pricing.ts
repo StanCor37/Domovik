@@ -74,3 +74,11 @@ export function computeTaxAmount(params: {
   );
   return nightCount * perNightRateSum;
 }
+
+/**
+ * Discount for a repriced stay: a percentage discount scales with the new
+ * base; a fixed amount (no percentage) is kept as it was.
+ */
+export function discountFor(baseAmount: number, discountPercent: number, discountAmount: number): number {
+  return discountPercent > 0 ? Math.round(baseAmount * discountPercent) / 100 : discountAmount;
+}

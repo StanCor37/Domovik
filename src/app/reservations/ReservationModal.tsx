@@ -12,7 +12,13 @@ import {
 } from "@/lib/guestCategories";
 import type { Product } from "@/lib/products";
 import { formatCurrency } from "@/lib/currency";
-import { RESERVATION_STATUSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
+import {
+  RESERVATION_STATUSES,
+  STATUS_LABELS,
+  isPaymentDriven,
+  statusForPayments,
+  type ReservationStatus,
+} from "@/lib/reservations";
 import { Button, Field } from "@/components/ui";
 import {
   addPayment,
@@ -23,7 +29,8 @@ import {
   previewPrice,
   updateReservation,
 } from "./actions";
-import type { ConflictInfo, GuestInput, PaymentRecord, PricePreviewResult } from "./types";
+import type { ConflictInfo, EarlyLeavePricing, GuestInput, PaymentRecord, PricePreviewResult } from "./types";
+import { discountFor } from "@/lib/pricing";
 
 export type RoomOption = { id: string; number: string; availableForReservation: boolean };
 export type PackageOption = { code: string; label: string };
@@ -69,6 +76,14 @@ export function ReservationModal({
   const [finalAmount, setFinalAmount] = useState(0);
   const [finalAmountManual, setFinalAmountManual] = useState(false);
   const [status, setStatus] = useState<ReservationStatus>("PREBOOKED");
+  // Status as last saved, so we know when the user is *switching to*
+  // Partially Canceled (and must say which day the guest leaves).
+  const [savedStatus, setSavedStatus] = useState<ReservationStatus | null>(null);
+  const [leaveDate, setLeaveDate] = useState("");
+  const [earlyLeavePricing, setEarlyLeavePricing] = useState<EarlyLeavePricing | null>(null);
+  // Price and tax for the nights actually stayed, shown before saving.
+  const [leavePreview, setLeavePreview] = useState<PricePreviewResult | null>(null);
+  const [originalCheckOut, setOriginalCheckOut] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
 
   const [preview, setPreview] = useState<PricePreviewResult | null>(null);
@@ -88,10 +103,17 @@ export function ReservationModal({
   const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [isCanceling, startCanceling] = useTransition();
 
+  // After a payment change: the server may have flipped Prebooked ⇄ Booked,
+  // so pick up the status too, and refresh the calendar behind the modal so
+  // the bar's color follows at once.
   async function refetchReservation() {
     if (!reservationId) return;
     const r = await getReservation(reservationId);
-    if (r) setPayments(r.payments);
+    if (r) {
+      setPayments(r.payments);
+      setStatus(r.status);
+    }
+    router.refresh();
   }
 
   useEffect(() => {
@@ -111,6 +133,8 @@ export function ReservationModal({
       setFinalAmount(r.finalAmount);
       setFinalAmountManual(true);
       setStatus(r.status);
+      setSavedStatus(r.status);
+      setOriginalCheckOut(r.originalCheckOut);
       setNotes(r.notes ?? "");
       setReservationNumber(r.reservationNumber);
       setPayments(r.payments);
@@ -182,13 +206,22 @@ export function ReservationModal({
       setError("Please choose a room.");
       return;
     }
+    if (isLeavingEarly && !leaveDate) {
+      setError("Choose the day the guest is leaving.");
+      return;
+    }
+    if (isLeavingEarly && !earlyLeavePricing) {
+      setError("Choose how to price the shorter stay.");
+      return;
+    }
 
     const input = {
       roomId,
       guestName,
       guestContact: guestContact || null,
       checkIn,
-      checkOut,
+      // Leaving early: the stay now ends on the leaving day.
+      checkOut: isLeavingEarly ? leaveDate : checkOut,
       product,
       guests,
       discountPercent,
@@ -196,6 +229,7 @@ export function ReservationModal({
       finalAmountOverride: finalAmount,
       status,
       notes: notes || null,
+      earlyLeavePricing: isLeavingEarly ? (earlyLeavePricing ?? undefined) : undefined,
     };
 
     startSaving(async () => {
@@ -269,6 +303,27 @@ export function ReservationModal({
       onClose();
     });
   }
+
+  const autoStatus = statusForPayments("PREBOOKED", payments.length);
+  const isLeavingEarly =
+    target.mode === "edit" && status === "PARTIALLY_CANCELED" && savedStatus !== "PARTIALLY_CANCELED";
+  // The guest can leave on any day after check-in, up to the night before
+  // the booked check-out.
+  const leaveMin = checkIn ? addDaysIso(checkIn, 1) : undefined;
+  const leaveMax = checkOut ? addDaysIso(checkOut, -1) : undefined;
+
+  useEffect(() => {
+    if (!isLeavingEarly || !leaveDate || !roomId || !checkIn) return;
+    let cancelled = false;
+    previewPrice({ roomId, checkIn, checkOut: leaveDate, product, guests }).then((result) => {
+      if (!cancelled) setLeavePreview(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLeavingEarly, leaveDate, roomId, checkIn, product, JSON.stringify(guests)]);
+  const statusOptions = RESERVATION_STATUSES.filter((s) => !isPaymentDriven(s) || s === autoStatus);
 
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
   const totalDue = finalAmount + (preview?.taxAmount ?? 0);
@@ -365,18 +420,90 @@ export function ReservationModal({
                 />
               </Field>
               <Field label="Status">
+                {/* Prebooked/Booked aren't picked by hand — they follow the
+                    payments — so the list offers that automatic status plus
+                    the manual ones. */}
                 <select
-                  value={status}
+                  value={isPaymentDriven(status) ? autoStatus : status}
                   onChange={(e) => setStatus(e.target.value as ReservationStatus)}
                   className="input"
                 >
-                  {RESERVATION_STATUSES.map((s) => (
+                  {statusOptions.map((s) => (
                     <option key={s} value={s}>
                       {STATUS_LABELS[s]}
+                      {s === autoStatus ? (payments.length > 0 ? " (has payments)" : " (no payments yet)") : ""}
                     </option>
                   ))}
                 </select>
               </Field>
+              {isLeavingEarly && (
+                <Field label="Leaving on (new check-out)">
+                  <input
+                    type="date"
+                    value={leaveDate}
+                    min={leaveMin}
+                    max={leaveMax}
+                    onChange={(e) => setLeaveDate(e.target.value)}
+                    className="input"
+                    required
+                  />
+                  <span className="text-xs text-zinc-500">
+                    Booked until {checkOut}. The nights after the leaving day become free.
+                  </span>
+                </Field>
+              )}
+              {isLeavingEarly && (
+                <fieldset className="col-span-full flex flex-col gap-2 rounded-md border border-zinc-200 p-3 text-sm">
+                  <legend className="px-1 font-medium">Price for the shorter stay</legend>
+                  {leaveDate && leavePreview && (
+                    <p className="text-xs text-zinc-500">
+                      {leavePreview.nightCount} {leavePreview.nightCount === 1 ? "night" : "nights"} stayed · tax
+                      becomes {money(leavePreview.taxAmount)} (was {money(preview?.taxAmount ?? 0)})
+                    </p>
+                  )}
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="radio"
+                      name="earlyLeavePricing"
+                      checked={earlyLeavePricing === "NIGHTS_STAYED"}
+                      onChange={() => setEarlyLeavePricing("NIGHTS_STAYED")}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      Charge only the nights stayed
+                      {leaveDate && leavePreview && (
+                        <span className="text-zinc-500">
+                          {" "}
+                          — final amount becomes{" "}
+                          {money(
+                            leavePreview.baseAmount -
+                              discountFor(leavePreview.baseAmount, discountPercent, discountAmount)
+                          )}{" "}
+                          (was {money(finalAmount)})
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="radio"
+                      name="earlyLeavePricing"
+                      checked={earlyLeavePricing === "MANUAL"}
+                      onChange={() => setEarlyLeavePricing("MANUAL")}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      Keep the price — I&apos;ll adjust the final amount by hand
+                      <span className="text-zinc-500"> (final amount stays {money(finalAmount)})</span>
+                    </span>
+                  </label>
+                </fieldset>
+              )}
+              {status === "PARTIALLY_CANCELED" && !isLeavingEarly && originalCheckOut && (
+                <p className="self-end text-xs text-zinc-500">
+                  Left early — originally booked until {originalCheckOut}.
+                </p>
+              )}
             </div>
 
             <div>
@@ -649,4 +776,10 @@ export function ReservationModal({
       </div>
     </div>
   );
+}
+
+function addDaysIso(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }

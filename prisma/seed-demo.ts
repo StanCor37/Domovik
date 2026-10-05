@@ -13,7 +13,7 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { PRICE_CATEGORY_MULTIPLIERS, type PriceCategory, type TaxCategory } from "../src/lib/guestCategories";
-import { OCCUPYING_STATUSES } from "../src/lib/reservations";
+import { OCCUPYING_STATUSES, statusForPayments, type ReservationStatus } from "../src/lib/reservations";
 
 const prisma = new PrismaClient();
 
@@ -224,6 +224,8 @@ async function seed() {
         const discountAmount = round2((baseAmount * discountPercent) / 100);
         const finalAmount = round2(baseAmount - discountAmount);
         const taxAmount = round2(nights * guests.reduce((s, g) => s + taxRates[g.taxCategory], 0));
+        // What the guest owes in all (stay + tourist tax), as in the ledger.
+        const totalDue = round2(finalAmount + taxAmount);
 
         const status = weighted<string>([["BOOKED", 74], ["PREBOOKED", 21], ["CANCELED", 5]]);
         const createdAt = minDate(addDays(checkIn, -int(14, 150)), addDays(TODAY, -int(1, 5)));
@@ -242,10 +244,10 @@ async function seed() {
           const depositDate = addDays(createdAt, int(1, 10));
           const deposit = round2(finalAmount * pick([0.2, 0.3, 0.3, 0.5]));
           if (plan === "full") {
-            payments.push({ amount: finalAmount, method: pick(paymentMethods), date: rand() < 0.5 ? depositDate : checkIn, note: null });
+            payments.push({ amount: totalDue, method: pick(paymentMethods), date: rand() < 0.5 ? depositDate : checkIn, note: null });
           } else if (plan === "deposit+rest") {
             payments.push({ amount: deposit, method: "Bank Transfer", date: depositDate, note: "Avans" });
-            payments.push({ amount: round2(finalAmount - deposit), method: pick(paymentMethods), date: checkIn, note: null });
+            payments.push({ amount: round2(totalDue - deposit), method: pick(paymentMethods), date: checkIn, note: null });
           } else if (plan === "deposit") {
             payments.push({ amount: deposit, method: "Bank Transfer", date: depositDate, note: "Avans" });
           }
@@ -253,6 +255,8 @@ async function seed() {
           payments.push({ amount: round2(finalAmount * 0.2), method: "Bank Transfer", date: paidOn(addDays(createdAt, int(1, 7))), note: "Avans" });
         }
         for (const pay of payments) pay.date = paidOn(pay.date);
+        // As in the app: Prebooked until something is paid, then Booked.
+        const finalStatus = statusForPayments(status as ReservationStatus, payments.length);
 
         drafts.push({
           roomId: room.id,
@@ -260,7 +264,7 @@ async function seed() {
           guestContact: guestContact(first, last),
           checkIn,
           checkOut,
-          status,
+          status: finalStatus,
           notes: rand() < 0.2 ? `${DEMO_TAG} ${pick(NOTES)}` : DEMO_TAG,
           guests,
           baseAmount,

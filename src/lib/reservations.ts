@@ -70,3 +70,42 @@ export const STATUS_TAG_CLASSES: Record<ReservationStatus, string> = {
   PARTIALLY_CANCELED: "bg-zinc-100 text-zinc-700",
   COMPLETED: "bg-zinc-100 text-zinc-500",
 };
+
+// --- Payment-driven status -------------------------------------------------
+// Prebooked = made but nothing paid yet; any payment makes it Booked (and
+// removing every payment makes it Prebooked again). The other statuses are
+// set by hand and never change on their own.
+const PAYMENT_DRIVEN: ReservationStatus[] = ["PREBOOKED", "BOOKED"];
+
+export function statusForPayments(status: ReservationStatus, paymentCount: number): ReservationStatus {
+  if (!PAYMENT_DRIVEN.includes(status)) return status;
+  return paymentCount > 0 ? "BOOKED" : "PREBOOKED";
+}
+
+export function isPaymentDriven(status: ReservationStatus): boolean {
+  return PAYMENT_DRIVEN.includes(status);
+}
+
+// How much of the total due (final amount + tourist tax, as in the ledger's
+// balance) the payments cover. A cent of tolerance absorbs float rounding.
+export type PaymentState = "UNPAID" | "PARTIAL" | "PAID";
+
+export function paymentStateOf(paid: number, totalDue: number): PaymentState {
+  if (paid <= 0) return "UNPAID";
+  return paid >= totalDue - 0.005 ? "PAID" : "PARTIAL";
+}
+
+// Calendar bar for a Booked stay that is fully paid — the success green, in
+// the same solid-gradient treatment as partly paid Booked (navy).
+const BOOKED_PAID_BLOCK_CLASSES =
+  "bg-gradient-to-b from-success to-[#167349] text-white font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]";
+
+export function calendarBlockClasses(status: ReservationStatus, paymentState: PaymentState): string {
+  if (status === "BOOKED" && paymentState === "PAID") return BOOKED_PAID_BLOCK_CLASSES;
+  return STATUS_BLOCK_CLASSES[status];
+}
+
+export function calendarStatusLabel(status: ReservationStatus, paymentState: PaymentState): string {
+  if (status !== "BOOKED") return STATUS_LABELS[status];
+  return paymentState === "PAID" ? "Booked · fully paid" : "Booked · partly paid";
+}

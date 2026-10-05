@@ -2,7 +2,12 @@
 
 import { useEffect, useLayoutEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { STATUS_BLOCK_CLASSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
+import {
+  calendarBlockClasses,
+  calendarStatusLabel,
+  type PaymentState,
+  type ReservationStatus,
+} from "@/lib/reservations";
 import { Button, ScrollRow, SegmentedButton } from "@/components/ui";
 import { ReservationModal, type ModalTarget, type PackageOption, type RoomOption } from "../reservations/ReservationModal";
 import { moveReservationToRoom } from "../reservations/actions";
@@ -26,13 +31,12 @@ export type CellInfo = {
   reservationId: string;
   guestName: string;
   status: ReservationStatus;
+  // Drives the Booked color: navy while partly paid, green once fully paid.
+  paymentState: PaymentState;
   // Actual edges of the reservation (not just where the season cuts off) —
   // a stay continuing past the season gets a flat edge here.
   isStart: boolean;
   isEnd: boolean;
-  // True only on the middle day of the in-season run, so the guest name
-  // reads as centered across the bar rather than pinned to its left edge.
-  showLabel: boolean;
 } | null;
 
 // How close (px) to either end of the rendered strip the user can scroll
@@ -185,12 +189,22 @@ export function CalendarGrid({
     pending.current = null;
     if (p?.type === "prepend") {
       el.scrollLeft += el.scrollWidth - p.prevScrollWidth;
-    } else if (p?.type === "jump") {
-      const th = monthStartRefs.current.get(p.month);
-      if (th) el.scrollLeft = th.offsetLeft - roomColWidth();
-    } else if (p?.type === "today") {
-      const th = todayHeaderRef.current;
-      if (th) el.scrollLeft = th.offsetLeft - (el.clientWidth + roomColWidth() - th.offsetWidth) / 2;
+    } else if (p?.type === "jump" || p?.type === "today") {
+      const th = p.type === "jump" ? monthStartRefs.current.get(p.month) : todayHeaderRef.current;
+      if (th) {
+        const targetLeft =
+          p.type === "jump"
+            ? th.offsetLeft - roomColWidth()
+            : th.offsetLeft - (el.clientWidth + roomColWidth() - th.offsetWidth) / 2;
+        el.scrollLeft = targetLeft;
+        // The strip may still be too narrow to scroll that far (the browser
+        // clamps it): render the next month and retry the same jump.
+        if (el.scrollLeft < targetLeft - 1 && range.end < lastIdx) {
+          pending.current = p;
+          setRange((r) => ({ ...r, end: Math.min(r.end + 1, lastIdx) }));
+          return;
+        }
+      }
     }
     updateActiveMonth(el);
     extendIfNearEdge(el);
@@ -452,6 +466,23 @@ export function CalendarGrid({
                     dragSpan.isos.includes(day.iso);
                   const dropTint = isDropPreview ? (canDropOn(room.id) ? " bg-emerald-100" : " bg-red-100") : "";
 
+                  // The guest name is drawn once per bar, from the bar's first
+                  // *rendered* day, exactly as wide as the bar's visible days —
+                  // so it centers on the bar and ends in "…" when too long.
+                  let labelWidth = 0;
+                  if (cell && shownCells[`${room.id}|${visibleDays[i - 1]?.iso}`]?.reservationId !== cell.reservationId) {
+                    let last = i;
+                    while (
+                      last + 1 < visibleDays.length &&
+                      shownCells[`${room.id}|${visibleDays[last + 1].iso}`]?.reservationId === cell.reservationId
+                    ) {
+                      last++;
+                    }
+                    const lastCell = shownCells[`${room.id}|${visibleDays[last].iso}`];
+                    // Minus the 4px inset (pl-1/pr-1) at a real check-in/out end.
+                    labelWidth = (last - i + 1) * DAY_COL_PX - (cell.isStart ? 4 : 0) - (lastCell?.isEnd ? 4 : 0);
+                  }
+
                   if (!cell) {
                     return (
                       <td
@@ -491,11 +522,11 @@ export function CalendarGrid({
                             setDragging(cell.reservationId);
                           }}
                           onDragEnd={endDrag}
-                          title={`${cell.guestName} — ${STATUS_LABELS[cell.status]} (drag to another room to move)`}
+                          title={`${cell.guestName} — ${calendarStatusLabel(cell.status, cell.paymentState)} (drag to another room to move)`}
                           className={
-                            "h-6 cursor-grab text-center text-[10px] leading-6 active:cursor-grabbing " +
+                            "relative h-6 cursor-grab text-center text-[10px] leading-6 active:cursor-grabbing " +
                             (dragging === cell.reservationId ? "opacity-40 " : "") +
-                            STATUS_BLOCK_CLASSES[cell.status] +
+                            calendarBlockClasses(cell.status, cell.paymentState) +
                             (cell.isStart ? " rounded-l-lg" : "") +
                             // Each day's piece reaches 1px under the next day's,
                             // so at fractional display scaling (e.g. 150%) the
@@ -503,11 +534,13 @@ export function CalendarGrid({
                             (cell.isEnd ? " rounded-r-lg" : " -mr-px")
                           }
                         >
-                          {/* The name may be wider than one day, so it overflows
-                              centered across the neighbouring days of the bar
-                              (raised above them) instead of being clipped. */}
-                          {cell.showLabel && (
-                            <span className="relative z-[5] -mx-20 block overflow-visible whitespace-nowrap">
+                          {/* Raised above the bar's later day pieces, and click-through
+                              so dragging/clicking still hits the bar underneath. */}
+                          {labelWidth > 0 && (
+                            <span
+                              className="pointer-events-none absolute inset-y-0 left-0 z-[5] truncate px-1.5"
+                              style={{ width: labelWidth }}
+                            >
                               {cell.guestName}
                             </span>
                           )}

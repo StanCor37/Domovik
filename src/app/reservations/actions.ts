@@ -3,9 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { dateToIso, isoToDate } from "@/lib/season";
-import { computeBaseAmount, computeTaxAmount, getOccupiedNights } from "@/lib/pricing";
+import { computeBaseAmount, computeTaxAmount, discountFor, getOccupiedNights } from "@/lib/pricing";
 import { isPriceCategory, isTaxCategory } from "@/lib/guestCategories";
-import { OCCUPYING_STATUSES, RESERVATION_STATUSES, type ReservationStatus } from "@/lib/reservations";
+import { OCCUPYING_STATUSES, RESERVATION_STATUSES, statusForPayments, type ReservationStatus } from "@/lib/reservations";
 import { generateReservationNumber } from "@/lib/reservationNumber";
 import type {
   ConflictInfo,
@@ -197,7 +197,8 @@ export async function createReservation(
           baseAmount,
           taxAmount,
           finalAmount,
-          status: input.status,
+          // A new reservation has no payments yet, so Prebooked/Booked → Prebooked.
+          status: statusForPayments(input.status, 0),
           notes: input.notes?.trim() || null,
           guests: {
             create: input.guests.map((g) => ({
@@ -224,8 +225,38 @@ export async function updateReservation(
     const existing = await prisma.reservation.findUnique({ where: { id } });
     if (!existing) return { ok: false, error: "Reservation not found." };
 
-    const { checkIn, checkOut, baseAmount, taxAmount, finalAmount } =
+    const { checkIn, checkOut, baseAmount, taxAmount, finalAmount: enteredFinalAmount } =
       await validateAndPrice(input);
+    const paymentCount = await prisma.payment.count({ where: { reservationId: id } });
+
+    // Partially canceling = the guest leaves early: input.checkOut is the day
+    // they leave, which must cut the booked stay short. The booked check-out
+    // is kept in originalCheckOut; the freed nights become bookable again.
+    const becomingPartial = input.status === "PARTIALLY_CANCELED" && existing.status !== "PARTIALLY_CANCELED";
+    if (becomingPartial && !(checkOut > checkIn && checkOut < existing.checkOut)) {
+      return {
+        ok: false,
+        error: `The leaving day must be after check-in and before the booked check-out (${dateToIso(existing.checkOut)}).`,
+      };
+    }
+    if (becomingPartial && !input.earlyLeavePricing) {
+      return { ok: false, error: "Choose how to price the shorter stay." };
+    }
+    const originalCheckOut = becomingPartial
+      ? existing.checkOut
+      : input.status === "PARTIALLY_CANCELED"
+        ? existing.originalCheckOut
+        : null;
+
+    // The tax always follows the nights actually stayed (taxAmount above is
+    // already for the shortened stay). The price either follows them too, or
+    // stays as entered for the user to adjust by hand.
+    let discountAmount = input.discountAmount;
+    let finalAmount = enteredFinalAmount;
+    if (becomingPartial && input.earlyLeavePricing === "NIGHTS_STAYED") {
+      discountAmount = discountFor(baseAmount, input.discountPercent, input.discountAmount);
+      finalAmount = baseAmount - discountAmount;
+    }
 
     const conflict = await findConflict({
       roomId: input.roomId,
@@ -249,11 +280,12 @@ export async function updateReservation(
           checkOut,
           product: input.product,
           discountPercent: input.discountPercent,
-          discountAmount: input.discountAmount,
+          discountAmount,
           baseAmount,
           taxAmount,
           finalAmount,
-          status: input.status,
+          status: statusForPayments(input.status, paymentCount),
+          originalCheckOut,
           notes: input.notes?.trim() || null,
           guests: {
             create: input.guests.map((g) => ({
@@ -299,6 +331,7 @@ export async function getReservation(id: string): Promise<ReservationDetail | nu
     taxAmount: reservation.taxAmount,
     status: reservation.status as ReservationStatus,
     notes: reservation.notes,
+    originalCheckOut: reservation.originalCheckOut ? dateToIso(reservation.originalCheckOut) : null,
     payments: reservation.payments.map((p) => ({
       id: p.id,
       amount: p.amount,
@@ -366,6 +399,20 @@ export async function cancelReservation(id: string): Promise<SaveReservationResu
   }
 }
 
+// Prebooked ⇄ Booked follows whether the reservation has any payment; other
+// statuses (canceled, completed, ...) are left alone.
+async function syncStatusWithPayments(reservationId: string) {
+  const reservation = await prisma.reservation.findUnique({
+    where: { id: reservationId },
+    select: { status: true, _count: { select: { payments: true } } },
+  });
+  if (!reservation) return;
+  const next = statusForPayments(reservation.status as ReservationStatus, reservation._count.payments);
+  if (next !== reservation.status) {
+    await prisma.reservation.update({ where: { id: reservationId }, data: { status: next } });
+  }
+}
+
 export async function addPayment(
   reservationId: string,
   input: PaymentInput
@@ -383,6 +430,7 @@ export async function addPayment(
         note: input.note?.trim() || null,
       },
     });
+    await syncStatusWithPayments(reservationId);
     revalidatePath("/calendar");
     return { ok: true };
   } catch (e) {
@@ -394,7 +442,8 @@ export async function deletePayment(
   paymentId: string
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    await prisma.payment.delete({ where: { id: paymentId } });
+    const payment = await prisma.payment.delete({ where: { id: paymentId } });
+    await syncStatusWithPayments(payment.reservationId);
     revalidatePath("/calendar");
     return { ok: true };
   } catch {

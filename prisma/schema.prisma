@@ -99,6 +99,9 @@ model Reservation {
   guestContact      String?
   checkIn           DateTime
   checkOut          DateTime
+  // Set when the stay is partially canceled (guest leaves early): the
+  // check-out originally booked, while checkOut becomes the actual departure.
+  originalCheckOut  DateTime?
   product           String   @default("FB")
   guests            Guest[]
   payments          Payment[]

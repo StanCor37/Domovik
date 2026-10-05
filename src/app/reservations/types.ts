@@ -35,7 +35,12 @@ export type ReservationInput = {
   finalAmountOverride: number | null;
   status: ReservationStatus;
   notes: string | null;
+  // Only when switching to Partially Canceled (leaving early): charge just
+  // the nights stayed, or keep the final amount for the user to adjust.
+  earlyLeavePricing?: EarlyLeavePricing;
 };
+
+export type EarlyLeavePricing = "NIGHTS_STAYED" | "MANUAL";
 
 export type ConflictInfo = {
   reservationNumber: string;
@@ -81,4 +86,7 @@ export type ReservationDetail = {
   status: ReservationStatus;
   notes: string | null;
   payments: PaymentRecord[];
+  // Partially canceled stays: the check-out originally booked (checkOut is
+  // then the actual, earlier departure).
+  originalCheckOut: string | null;
 };
