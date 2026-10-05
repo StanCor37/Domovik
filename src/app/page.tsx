@@ -5,7 +5,7 @@ import { compareNatural } from "@/lib/sort";
 import { dateToIso, getSeasonRange, WEEKDAY_LABELS } from "@/lib/season";
 import { formatCurrency } from "@/lib/currency";
 import { OCCUPYING_STATUSES, type ReservationStatus } from "@/lib/reservations";
-import { Button, PageHeader, StatCard, StatusTag, Table, TableWrap, Td, THead, Th, Tr } from "@/components/ui";
+import { Button, StatCard, StatusTag, Table, TableWrap, Td, THead, Th, Tr } from "@/components/ui";
 
 // Next.js doesn't apply the root layout's title template to a page at the
 // same "/" segment (only to nested routes), so this needs the full string.
@@ -36,7 +36,6 @@ export default async function DashboardPage({
   if (!property) {
     return (
       <div className="flex flex-col gap-4">
-        <PageHeader title="Dashboard" />
         <p className="text-zinc-500">
           Configure the{" "}
           <Link href="/settings/property" className="underline">
@@ -152,8 +151,6 @@ export default async function DashboardPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Dashboard" />
-
       {roomCount === 0 && (
         <p className="text-zinc-500">
           No active rooms configured yet. Add rooms in{" "}

@@ -6,7 +6,7 @@ import { dateToIso } from "@/lib/season";
 import { parsePaymentMethods } from "@/lib/paymentMethods";
 import { matchesSearch } from "@/lib/serbianSearch";
 import { RESERVATION_STATUSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
-import { Button, Field, PageHeader } from "@/components/ui";
+import { Button, Field } from "@/components/ui";
 import { LedgerTable, type LedgerRow } from "./LedgerTable";
 import type { RoomOption } from "../reservations/ReservationModal";
 
@@ -145,8 +145,6 @@ export default async function LedgerPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title="Outgoing invoices ledger" />
-
       <form className="flex flex-wrap items-end gap-3" action="/ledger" method="get">
         <input type="hidden" name="sort" value={sortKey} />
         <input type="hidden" name="dir" value={dir} />

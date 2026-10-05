@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/dal";
 import { getTheme } from "@/lib/theme";
-import { Avatar, Card, PageTitle } from "@/components/ui";
+import { Avatar, Card } from "@/components/ui";
 import { ChangePasswordForm } from "./ChangePasswordForm";
 import { ThemeSwitch } from "./ThemeSwitch";
 
@@ -17,8 +17,6 @@ export default async function ProfilePage() {
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <PageTitle title="Profile" />
-
       <Card className="flex items-center gap-4">
         <Avatar name={user.name} size="lg" />
         <div className="min-w-0">

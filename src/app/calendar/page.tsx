@@ -19,7 +19,7 @@ import {
   paymentStateOf,
   type ReservationStatus,
 } from "@/lib/reservations";
-import { Button, PageTitle } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { CalendarGrid, type CellInfo, type DayInfo, type MonthInfo, type ReservationSummary } from "./CalendarGrid";
 
 export const metadata: Metadata = { title: "Calendar" };
@@ -41,7 +41,6 @@ export default async function CalendarPage({
   if (!property) {
     return (
       <div className="flex flex-col gap-4">
-        <PageTitle title="Calendar" />
         <p className="text-zinc-500">
           Configure the{" "}
           <Link href="/settings/property" className="underline">
@@ -187,27 +186,23 @@ export default async function CalendarPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <PageTitle
-        title="Calendar"
-        action={
-          <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
-            <LegendSwatch className="bg-white ring-1 ring-inset ring-zinc-400" label="Free" />
-            <LegendSwatch className={STATUS_BLOCK_CLASSES.PREBOOKED} label="Prebooked (unpaid)" />
-            <LegendSwatch className={calendarBlockClasses("BOOKED", "PARTIAL")} label="Booked · partly paid" />
-            <LegendSwatch className={calendarBlockClasses("BOOKED", "PAID")} label="Booked · fully paid" />
-            <LegendSwatch className={STATUS_BLOCK_CLASSES.PARTIALLY_CANCELED} label="Partially canceled" />
-          </div>
-        }
-      />
-
-      <div className="flex items-center gap-2 text-sm">
-        <Button href={`?year=${year - 1}&month=${month}`} variant="secondary">
-          ← {year - 1}
-        </Button>
-        <span className="font-medium">{year}</span>
-        <Button href={`?year=${year + 1}&month=${month}`} variant="secondary">
-          {year + 1} →
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm">
+          <Button href={`?year=${year - 1}&month=${month}`} variant="secondary">
+            ← {year - 1}
+          </Button>
+          <span className="font-medium">{year}</span>
+          <Button href={`?year=${year + 1}&month=${month}`} variant="secondary">
+            {year + 1} →
+          </Button>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+          <LegendSwatch className="bg-white ring-1 ring-inset ring-zinc-400" label="Free" />
+          <LegendSwatch className={STATUS_BLOCK_CLASSES.PREBOOKED} label="Prebooked (unpaid)" />
+          <LegendSwatch className={calendarBlockClasses("BOOKED", "PARTIAL")} label="Booked · partly paid" />
+          <LegendSwatch className={calendarBlockClasses("BOOKED", "PAID")} label="Booked · fully paid" />
+          <LegendSwatch className={STATUS_BLOCK_CLASSES.PARTIALLY_CANCELED} label="Partially canceled" />
+        </div>
       </div>
 
       {rooms.length === 0 ? (

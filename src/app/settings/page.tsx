@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PageTitle } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -55,7 +54,6 @@ const sections = [
 export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-6">
-      <PageTitle title="Settings" />
       <div className="grid gap-4 sm:grid-cols-2">
         {sections.map((section) => (
           <Link
