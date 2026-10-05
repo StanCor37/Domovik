@@ -7,3 +7,4 @@ export { StatusTag, StatusPill, Badge } from "./Tag";
 export { StatCard } from "./StatCard";
 export { SegmentedLink, SegmentedButton } from "./SegmentedLink";
 export { ScrollRow } from "./ScrollRow";
+export { Avatar } from "./Avatar";
