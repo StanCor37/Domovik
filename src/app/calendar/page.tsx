@@ -13,8 +13,8 @@ import {
 import { compareNatural } from "@/lib/sort";
 import { parsePaymentMethods } from "@/lib/paymentMethods";
 import { OCCUPYING_STATUSES, STATUS_BLOCK_CLASSES, type ReservationStatus } from "@/lib/reservations";
-import { Button, PageTitle, ScrollRow, SegmentedLink } from "@/components/ui";
-import { CalendarGrid, type CellInfo, type DayInfo } from "./CalendarGrid";
+import { Button, PageTitle } from "@/components/ui";
+import { CalendarGrid, type CellInfo, type DayInfo, type MonthInfo } from "./CalendarGrid";
 
 export const metadata: Metadata = { title: "Calendar" };
 
@@ -52,7 +52,17 @@ export default async function CalendarPage({
   const seasonMonths = getSeasonMonths(property, year);
   const month = params.month ? Number(params.month) : defaults.month;
 
-  const monthDays = getMonthDaysInSeason(property, year, month);
+  // The grid is one continuous strip across the whole season (rendered a
+  // month or so at a time as the user scrolls), so stays that cross a month
+  // boundary read as one bar instead of being cut at the month edge.
+  const months: MonthInfo[] = [];
+  const monthDays: Date[] = [];
+  for (const m of seasonMonths) {
+    const mDays = getMonthDaysInSeason(property, year, m);
+    if (mDays.length === 0) continue;
+    months.push({ month: m, label: `${MONTH_LABELS[m - 1]} ${year}`, dayCount: mDays.length });
+    monthDays.push(...mDays);
+  }
   const todayIso = dateToIso(new Date());
 
   const [roomRows, smenaPeriods, settings, packageRows] = await Promise.all([
@@ -81,6 +91,7 @@ export default async function CalendarPage({
       iso,
       weekday: WEEKDAY_LABELS[d.getUTCDay()],
       dayOfMonth: d.getUTCDate(),
+      month: d.getUTCMonth() + 1,
       isToday: iso === todayIso,
       smenaLabel: smenaStartsByIso.get(iso),
     };
@@ -110,7 +121,7 @@ export default async function CalendarPage({
 
   const cells: Record<string, CellInfo> = {};
   for (const r of reservations) {
-    // Isos this reservation occupies within the visible month, in order —
+    // Isos this reservation occupies within the season, in order —
     // a contiguous run since a room can't have two overlapping reservations.
     const runIsos: string[] = [];
     for (
@@ -123,12 +134,12 @@ export default async function CalendarPage({
     if (runIsos.length === 0) continue;
 
     // isStart/isEnd mark the reservation's *actual* edges (not just where the
-    // visible month happens to cut off), so a stay continuing past the
-    // visible range renders with a flat edge rather than a false end cap.
+    // season happens to cut off), so a stay continuing past it renders with
+    // a flat edge rather than a false end cap.
     const checkInIso = dateToIso(r.checkIn);
     const lastNightIso = dateToIso(new Date(r.checkOut.getTime() - 86400000));
-    // The label always goes on the middle of the *visible* run so it reads
-    // as centered across the bar on screen, wherever the bar is cut off.
+    // The label always goes on the middle of the in-season run so it reads
+    // as centered across the bar, wherever the season cuts it off.
     const labelIso = runIsos[Math.floor((runIsos.length - 1) / 2)];
 
     for (const iso of runIsos) {
@@ -156,23 +167,14 @@ export default async function CalendarPage({
         }
       />
 
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-sm">
-          <Button href={`?year=${year - 1}&month=${month}`} variant="secondary">
-            ← {year - 1}
-          </Button>
-          <span className="font-medium">{year}</span>
-          <Button href={`?year=${year + 1}&month=${month}`} variant="secondary">
-            {year + 1} →
-          </Button>
-        </div>
-        <ScrollRow className="min-w-0 flex-1">
-          {seasonMonths.map((m) => (
-            <SegmentedLink key={m} href={`?year=${year}&month=${m}`} active={m === month}>
-              {MONTH_LABELS[m - 1]}
-            </SegmentedLink>
-          ))}
-        </ScrollRow>
+      <div className="flex items-center gap-2 text-sm">
+        <Button href={`?year=${year - 1}&month=${month}`} variant="secondary">
+          ← {year - 1}
+        </Button>
+        <span className="font-medium">{year}</span>
+        <Button href={`?year=${year + 1}&month=${month}`} variant="secondary">
+          {year + 1} →
+        </Button>
       </div>
 
       {rooms.length === 0 ? (
@@ -185,13 +187,15 @@ export default async function CalendarPage({
         </p>
       ) : days.length === 0 ? (
         <p className="text-zinc-500">
-          No days in {MONTH_LABELS[month - 1]} {year} fall within the
-          configured season.
+          No days in {year} fall within the configured season.
         </p>
       ) : (
         <CalendarGrid
+          key={`${year}-${month}`}
           rooms={rooms}
           days={days}
+          months={months}
+          initialMonth={months.some((m) => m.month === month) ? month : months[0].month}
           cells={cells}
           packages={packages}
           paymentMethods={paymentMethods}

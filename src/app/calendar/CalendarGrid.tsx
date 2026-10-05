@@ -1,34 +1,57 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { STATUS_BLOCK_CLASSES, STATUS_LABELS, type ReservationStatus } from "@/lib/reservations";
-import { Button } from "@/components/ui";
+import { Button, ScrollRow, SegmentedButton } from "@/components/ui";
 import { ReservationModal, type ModalTarget, type PackageOption, type RoomOption } from "../reservations/ReservationModal";
 
 export type DayInfo = {
   iso: string;
   weekday: string;
   dayOfMonth: number;
+  month: number;
   isToday: boolean;
   smenaLabel?: string;
+};
+
+export type MonthInfo = {
+  month: number;
+  label: string;
+  dayCount: number;
 };
 
 export type CellInfo = {
   reservationId: string;
   guestName: string;
   status: ReservationStatus;
-  // Actual edges of the reservation (not just where the visible month cuts
-  // off) — a stay continuing past the visible range gets a flat edge here.
+  // Actual edges of the reservation (not just where the season cuts off) —
+  // a stay continuing past the season gets a flat edge here.
   isStart: boolean;
   isEnd: boolean;
-  // True only on the middle day of the *visible* run, so the guest name
+  // True only on the middle day of the in-season run, so the guest name
   // reads as centered across the bar rather than pinned to its left edge.
   showLabel: boolean;
 } | null;
 
+// How close (px) to either end of the rendered strip the user can scroll
+// before the neighbouring month is rendered in.
+const EDGE_PX = 400;
+
+// Fixed column widths (px) — the table uses a fixed layout so a long guest
+// name can never stretch its day column and throw the days out of line.
+const ROOM_COL_PX = 80;
+const DAY_COL_PX = 36;
+
+type PendingScroll =
+  | { type: "prepend"; prevScrollWidth: number }
+  | { type: "jump"; month: number }
+  | { type: "today" };
+
 export function CalendarGrid({
   rooms,
   days,
+  months,
+  initialMonth,
   cells,
   packages,
   paymentMethods,
@@ -36,23 +59,115 @@ export function CalendarGrid({
 }: {
   rooms: RoomOption[];
   days: DayInfo[];
+  months: MonthInfo[];
+  initialMonth: number;
   cells: Record<string, CellInfo>;
   packages: PackageOption[];
   paymentMethods: string[];
   currency: string;
 }) {
   const [target, setTarget] = useState<ModalTarget | null>(null);
-  const todayHeaderRef = useRef<HTMLTableCellElement | null>(null);
+  const today = days.find((d) => d.isToday);
+  const lastIdx = months.length - 1;
+  const initialIdx = Math.max(0, months.findIndex((m) => m.month === initialMonth));
 
-  // Jump the grid's horizontal scroll to today's column on load, since a
-  // month can be wider than the viewport and today may be off to the right.
+  // The season is one continuous strip, but only the months in [start, end]
+  // are rendered; more are added as the user scrolls toward either end.
+  const [range, setRange] = useState({ start: initialIdx, end: Math.min(initialIdx + 1, lastIdx) });
+  const [activeMonth, setActiveMonth] = useState(months[initialIdx]?.month);
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const roomHeaderRef = useRef<HTMLTableCellElement | null>(null);
+  const todayHeaderRef = useRef<HTMLTableCellElement | null>(null);
+  const monthStartRefs = useRef(new Map<number, HTMLTableCellElement>());
+  const pending = useRef<PendingScroll | null>(
+    today?.month === initialMonth ? { type: "today" } : { type: "jump", month: initialMonth }
+  );
+
+  const visibleMonths = months.slice(range.start, range.end + 1);
+  const visibleMonthSet = new Set(visibleMonths.map((m) => m.month));
+  const visibleDays = days.filter((d) => visibleMonthSet.has(d.month));
+
+  function roomColWidth() {
+    return roomHeaderRef.current?.offsetWidth ?? 0;
+  }
+
+  // The month whose days are at the left edge of the view (just right of the
+  // sticky Room column) — highlighted in the month picker.
+  function updateActiveMonth(el: HTMLDivElement) {
+    let current = visibleMonths[0]?.month;
+    for (const m of visibleMonths) {
+      const th = monthStartRefs.current.get(m.month);
+      if (th && th.offsetLeft - roomColWidth() <= el.scrollLeft + DAY_COL_PX / 2) current = m.month;
+    }
+    // At the far right the last (often partial) month can't reach the left
+    // edge, so highlight it once its first day is in view.
+    const last = visibleMonths[visibleMonths.length - 1];
+    const lastTh = last && range.end === lastIdx ? monthStartRefs.current.get(last.month) : undefined;
+    if (lastTh && el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 && lastTh.offsetLeft < el.scrollLeft + el.clientWidth) {
+      current = last.month;
+    }
+    setActiveMonth(current);
+  }
+
+  function extendIfNearEdge(el: HTMLDivElement) {
+    if (el.scrollLeft + el.clientWidth > el.scrollWidth - EDGE_PX && range.end < lastIdx) {
+      setRange((r) => ({ ...r, end: Math.min(r.end + 1, lastIdx) }));
+    } else if (el.scrollLeft < EDGE_PX && range.start > 0) {
+      // Prepending widens the strip on the left; remember the old width so
+      // the scroll position can be shifted to keep the same days in view.
+      pending.current = { type: "prepend", prevScrollWidth: el.scrollWidth };
+      setRange((r) => ({ ...r, start: Math.max(r.start - 1, 0) }));
+    }
+  }
+
+  // Runs after each render of a new range, before paint, so prepends and
+  // jumps never show a flash of the wrong scroll position.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const p = pending.current;
+    pending.current = null;
+    if (p?.type === "prepend") {
+      el.scrollLeft += el.scrollWidth - p.prevScrollWidth;
+    } else if (p?.type === "jump") {
+      const th = monthStartRefs.current.get(p.month);
+      if (th) el.scrollLeft = th.offsetLeft - roomColWidth();
+    } else if (p?.type === "today") {
+      const th = todayHeaderRef.current;
+      if (th) el.scrollLeft = th.offsetLeft - (el.clientWidth + roomColWidth() - th.offsetWidth) / 2;
+    }
+    updateActiveMonth(el);
+    extendIfNearEdge(el);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range]);
+
+  // A mouse wheel scrolls through the days (horizontally) rather than the
+  // rooms, since moving through dates is what the calendar is for; Shift +
+  // wheel scrolls the rooms instead. Trackpad sideways swipes (deltaX) pass
+  // through untouched. Attached natively because React's wheel listener is
+  // passive and can't preventDefault the browser's vertical scroll.
   useEffect(() => {
-    todayHeaderRef.current?.scrollIntoView({
-      behavior: "instant",
-      inline: "center",
-      block: "nearest",
-    });
+    const el = scrollRef.current;
+    if (!el) return;
+    function onWheel(e: WheelEvent) {
+      if (e.ctrlKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+      const delta = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY;
+      e.preventDefault();
+      if (e.shiftKey) el!.scrollTop += delta;
+      else el!.scrollLeft += delta;
+    }
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
   }, []);
+
+  function jumpTo(monthIdx: number, scroll: PendingScroll) {
+    pending.current = scroll;
+    setRange((r) => ({
+      start: Math.min(r.start, monthIdx),
+      end: Math.max(r.end, Math.min(monthIdx + 1, lastIdx)),
+    }));
+  }
 
   function openCreate(roomId: string, iso: string) {
     const checkOutDate = new Date(`${iso}T00:00:00.000Z`);
@@ -68,40 +183,114 @@ export function CalendarGrid({
   const now = new Date();
   const todayHref = `?year=${now.getFullYear()}&month=${now.getMonth() + 1}`;
 
+  // A thin line marks where one month ends and the next begins; a smena start
+  // gets the heavier line. Neither is drawn through a reservation bar, so a
+  // stay crossing the boundary stays one continuous bar.
+  function dividerClass(day: DayInfo, i: number) {
+    if (day.smenaLabel) return " border-l-2 border-l-zinc-900";
+    if (day.dayOfMonth === 1 && i > 0) return " border-l border-l-zinc-300";
+    return "";
+  }
+
   return (
     <div className="flex flex-col gap-3">
+      <ScrollRow className="min-w-0" activeKey={activeMonth}>
+        {months.map((m, idx) => (
+          <SegmentedButton
+            key={m.month}
+            active={m.month === activeMonth}
+            onClick={() => jumpTo(idx, { type: "jump", month: m.month })}
+          >
+            {m.label.split(" ")[0]}
+          </SegmentedButton>
+        ))}
+      </ScrollRow>
+
       <div className="flex gap-2">
         <Button
           type="button"
           onClick={() => {
             const firstAvailable = rooms.find((r) => r.availableForReservation) ?? rooms[0];
-            if (firstAvailable && days[0]) openCreate(firstAvailable.id, days[0].iso);
+            const iso = today?.iso ?? visibleDays[0]?.iso;
+            if (firstAvailable && iso) openCreate(firstAvailable.id, iso);
           }}
         >
           + New Reservation
         </Button>
-        <Button href={todayHref} variant="secondary">
-          Today
-        </Button>
+        {today ? (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => jumpTo(months.findIndex((m) => m.month === today.month), { type: "today" })}
+          >
+            Today
+          </Button>
+        ) : (
+          <Button href={todayHref} variant="secondary">
+            Today
+          </Button>
+        )}
       </div>
 
-      <div className="max-h-[70vh] overflow-auto rounded-lg border border-zinc-200 bg-white">
-        <table className="border-separate border-spacing-0 text-xs">
+      <div
+        ref={scrollRef}
+        onScroll={(e) => {
+          updateActiveMonth(e.currentTarget);
+          extendIfNearEdge(e.currentTarget);
+        }}
+        className="relative max-h-[70vh] overflow-auto rounded-lg border border-zinc-200 bg-white"
+      >
+        <table
+          className="table-fixed border-separate border-spacing-0 text-xs"
+          style={{ width: ROOM_COL_PX + visibleDays.length * DAY_COL_PX }}
+        >
+          <colgroup>
+            <col style={{ width: ROOM_COL_PX }} />
+            {visibleDays.map((day) => (
+              <col key={day.iso} style={{ width: DAY_COL_PX }} />
+            ))}
+          </colgroup>
           <thead>
             <tr>
-              <th className="sticky top-0 left-0 z-20 w-20 min-w-20 border-b border-r border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left font-medium text-zinc-500">
+              <th
+                ref={roomHeaderRef}
+                rowSpan={2}
+                className="sticky top-0 left-0 z-30 w-20 min-w-20 border-b border-r border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left align-bottom font-medium text-zinc-500"
+              >
                 Room
               </th>
-              {days.map((day) => (
+              {visibleMonths.map((m, i) => (
+                <th
+                  key={m.month}
+                  colSpan={m.dayCount}
+                  className={
+                    "sticky top-0 z-10 h-7 border-b border-zinc-200 bg-zinc-50 p-0 text-left font-semibold text-zinc-900" +
+                    (i > 0 ? " border-l border-l-zinc-300" : "")
+                  }
+                >
+                  {/* Sticks just right of the Room column so the month name
+                      stays readable while scrolling through that month. */}
+                  <span className="sticky left-20 inline-block px-2">{m.label}</span>
+                </th>
+              ))}
+            </tr>
+            <tr>
+              {visibleDays.map((day, i) => (
                 <th
                   key={day.iso}
-                  ref={day.isToday ? todayHeaderRef : undefined}
+                  ref={(el) => {
+                    if (day.isToday) todayHeaderRef.current = el;
+                    if (i === 0 || day.dayOfMonth === 1 || day.month !== visibleDays[i - 1].month) {
+                      if (el) monthStartRefs.current.set(day.month, el);
+                      else monthStartRefs.current.delete(day.month);
+                    }
+                  }}
                   className={
-                    "sticky top-0 z-10 min-w-9 px-1 py-1.5 text-center font-medium " +
+                    "sticky top-7 z-10 min-w-9 px-1 py-1.5 text-center font-medium " +
                     (day.isToday
                       ? "border-b-2 border-b-accent bg-zinc-50 text-zinc-900 font-semibold"
                       : "border-b border-zinc-200 bg-zinc-50 text-zinc-500") +
-                    (day.smenaLabel ? " border-l-2 border-l-zinc-900" : "")
+                    dividerClass(day, i)
                   }
                   title={day.smenaLabel ? `Smena starts: ${day.smenaLabel}` : undefined}
                 >
@@ -120,9 +309,8 @@ export function CalendarGrid({
                     <span className="ml-1 text-[10px] font-normal text-zinc-500 italic">n/a</span>
                   )}
                 </td>
-                {days.map((day) => {
+                {visibleDays.map((day, i) => {
                   const cell = cells[`${room.id}|${day.iso}`] ?? null;
-                  const borderL = day.smenaLabel ? "border-l-2 border-l-zinc-900" : "";
 
                   if (!cell) {
                     return (
@@ -131,8 +319,7 @@ export function CalendarGrid({
                         className={
                           "h-8 min-w-9 cursor-pointer border-b border-zinc-100 hover:bg-zinc-50 " +
                           (day.isToday ? "bg-gradient-to-b from-accent/12 to-accent/3" : "") +
-                          " " +
-                          borderL
+                          dividerClass(day, i)
                         }
                         onClick={() => openCreate(room.id, day.iso)}
                       />
@@ -141,31 +328,37 @@ export function CalendarGrid({
 
                   return (
                     <td
-                      key={day.iso}
-                      className={
-                        "h-8 min-w-9 cursor-pointer border-b border-zinc-100 " +
-                        (cell.isStart ? "pl-1" : "") +
-                        (cell.isEnd ? " pr-1" : "") +
-                        (day.isToday ? " ring-1 ring-inset ring-accent/25" : "") +
-                        " " +
-                        borderL
-                      }
-                      onClick={() =>
-                        setTarget({ mode: "edit", reservationId: cell.reservationId })
-                      }
-                    >
-                      <div
-                        title={`${cell.guestName} — ${STATUS_LABELS[cell.status]}`}
+                        key={day.iso}
                         className={
-                          "h-6 truncate text-center text-[10px] leading-6 " +
-                          STATUS_BLOCK_CLASSES[cell.status] +
-                          (cell.isStart ? " rounded-l-lg" : "") +
-                          (cell.isEnd ? " rounded-r-lg" : "")
+                          "h-8 min-w-9 cursor-pointer border-b border-zinc-100 " +
+                          (cell.isStart ? "pl-1" : "") +
+                          (cell.isEnd ? " pr-1" : "") +
+                          (day.isToday ? " ring-1 ring-inset ring-accent/25" : "") +
+                          (day.smenaLabel ? " border-l-2 border-l-zinc-900" : "")
+                        }
+                        onClick={() =>
+                          setTarget({ mode: "edit", reservationId: cell.reservationId })
                         }
                       >
-                        {cell.showLabel ? cell.guestName : ""}
-                      </div>
-                    </td>
+                        <div
+                          title={`${cell.guestName} — ${STATUS_LABELS[cell.status]}`}
+                          className={
+                            "h-6 text-center text-[10px] leading-6 " +
+                            STATUS_BLOCK_CLASSES[cell.status] +
+                            (cell.isStart ? " rounded-l-lg" : "") +
+                            (cell.isEnd ? " rounded-r-lg" : "")
+                          }
+                        >
+                          {/* The name may be wider than one day, so it overflows
+                              centered across the neighbouring days of the bar
+                              (raised above them) instead of being clipped. */}
+                          {cell.showLabel && (
+                            <span className="relative z-[5] -mx-20 block overflow-visible whitespace-nowrap">
+                              {cell.guestName}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                   );
                 })}
               </tr>

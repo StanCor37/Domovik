@@ -5,5 +5,5 @@ export { Card, FormCard, CARD_TONE_CLASSES, TONE_TEXT_CLASSES, type CardTone } f
 export { TableWrap, Table, THead, Th, Tr, Td, EmptyRow } from "./Table";
 export { StatusTag, StatusPill, Badge } from "./Tag";
 export { StatCard } from "./StatCard";
-export { SegmentedLink } from "./SegmentedLink";
+export { SegmentedLink, SegmentedButton } from "./SegmentedLink";
 export { ScrollRow } from "./ScrollRow";
