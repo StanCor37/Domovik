@@ -28,10 +28,20 @@ export const STATUS_LABELS: Record<ReservationStatus, string> = {
 // gradient) instead of plain grayscale; the rest stay neutral. No per-cell
 // borders: adjacent same-status day cells must stay visually seamless to
 // read as one connected bar, see CalendarGrid.
+//
+// The gradient direction matters here: CalendarGrid renders one <div> per
+// *day*, not one spanning element per reservation, relying on adjacent
+// cells sitting flush to read as a single bar. A diagonal gradient
+// (to-br) restarts its own top-left-to-bottom-right sweep inside every
+// cell, which is invisible for a 1-night stay but tiles into an obvious
+// sawtooth of seams for 3+ nights. A vertical gradient (to-b) has no
+// horizontal component, so every cell (same height) paints an identical
+// slice and the seam disappears regardless of how many nights a stay
+// spans.
 export const STATUS_BLOCK_CLASSES: Record<ReservationStatus, string> = {
-  PREBOOKED: "bg-gradient-to-br from-primary/16 to-primary/8 text-primary",
+  PREBOOKED: "bg-gradient-to-b from-primary/16 to-primary/8 text-primary",
   BOOKED:
-    "bg-gradient-to-br from-primary to-[#0a5693] text-white font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
+    "bg-gradient-to-b from-primary to-[#0a5693] text-white font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]",
   CANCELED: "bg-zinc-50 text-zinc-400",
   PARTIALLY_CANCELED: "bg-zinc-300 text-zinc-900 font-medium",
   COMPLETED: "bg-zinc-100 text-zinc-500",
