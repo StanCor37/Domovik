@@ -53,6 +53,8 @@
   --color-booked: #2e5f8e;
   --color-on-booked: #ffffff;
   --color-rule-strong: #141414;
+  /* Logo mark: brand blue on light, white on dark (brand's white variant). */
+  --color-mark: #2e5f8e;
 
   /* Status (semantic only) */
   --color-success: #2e9e6b;
@@ -108,6 +110,7 @@
   --color-booked: #4f86b0;
   --color-on-booked: #ffffff;
   --color-rule-strong: #6b7f92;
+  --color-mark: #ffffff;
   --color-accent-ink: #ef9a93;
   --color-accent-wash: #3a2224;
 
@@ -150,6 +153,7 @@
     --color-booked: #4f86b0;
     --color-on-booked: #ffffff;
     --color-rule-strong: #6b7f92;
+    --color-mark: #ffffff;
     --color-accent-ink: #ef9a93;
     --color-accent-wash: #3a2224;
 

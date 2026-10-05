@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/dal";
+import { Logo } from "@/components/ui";
 import { getTheme } from "@/lib/theme";
 import { NavLinks } from "./NavLinks";
 import { UserMenu } from "./UserMenu";
@@ -28,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const theme = await getTheme();
+  const [theme, user] = await Promise.all([getTheme(), getCurrentUser()]);
   return (
     <html
       lang="en"
@@ -37,18 +39,24 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${carlito.variable} ${arimo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-canvas text-zinc-900">
-        <header className="sticky top-0 z-[100] border-b border-zinc-200 bg-white">
-          <nav className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-6">
-            <Link href="/" className="text-[22px] leading-none text-zinc-900">
-              Domovik
-            </Link>
-            <NavLinks />
-            <UserMenu />
-          </nav>
-        </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">
-          {children}
-        </main>
+        {/* Signed out (only /login is reachable then): no app chrome, the
+            page gets the whole window. */}
+        {user ? (
+          <>
+            <header className="sticky top-0 z-[100] border-b border-zinc-200 bg-white">
+              <nav className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-6">
+                <Link href="/" aria-label="Domovik — Dashboard" className="flex items-center">
+                  <Logo height={24} />
+                </Link>
+                <NavLinks />
+                <UserMenu />
+              </nav>
+            </header>
+            <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-8">{children}</main>
+          </>
+        ) : (
+          <main className="flex flex-1 flex-col">{children}</main>
+        )}
       </body>
     </html>
   );
